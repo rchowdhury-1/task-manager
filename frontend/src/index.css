@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #10b981;
+  --primary-dark: #059669;
+  --accent: #f97316;
+  --bg: #0a0a0a;
+  --bg-2: #111111;
+  --surface: #1a1a1a;
+  --surface-2: #222222;
+  --border: rgba(16, 185, 129, 0.2);
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --error: #ef4444;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+.board-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: calc(100vh - 120px);
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  align-items: flex-start;
+}
+
+.column-container {
+  flex-shrink: 0;
+  width: 280px;
+}
+
+.card-list {
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+  padding: 0 2px;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animated-gradient {
+  background: linear-gradient(135deg, #0a0a0a 0%, #0d2818 30%, #0a0a0a 60%, #1a0d00 100%);
+  background-size: 300% 300%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); }
+}
+
+.glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.border-emerald {
+  border: 1px solid var(--border);
+}
+
+.bg-surface {
+  background-color: var(--surface);
+}
+
+.bg-surface-2 {
+  background-color: var(--surface-2);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+input, textarea, select {
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  ring: 2px;
+  ring-color: var(--primary);
+}
+
+.drag-over {
+  border-color: var(--primary) !important;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
