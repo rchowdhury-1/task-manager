@@ -2,7 +2,7 @@ services:
   - type: web
     name: task-manager-backend
     runtime: node
-    buildCommand: cd server && npm install && npm run build
+    buildCommand: cd server && npm install --include=dev && npm run build
     startCommand: cd server && node dist/server.js
     envVars:
       - key: NODE_ENV
