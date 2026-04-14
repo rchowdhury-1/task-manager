@@ -162,7 +162,6 @@ export default function KanbanBoard({
             column={column}
             cards={getCardsByColumn(column.id)}
             boardId={boardId}
-            members={members}
             onCardCreated={onCardCreated}
             onCardClick={onCardClick}
             onColumnDeleted={onColumnDeleted}
