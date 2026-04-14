@@ -1,6 +1,39 @@
-# TaskFlow — Real-Time Task Manager
+# TaskFlow — Real-Time Collaborative Kanban
 
-A full-stack kanban board with real-time collaboration via Socket.io, drag-and-drop, JWT auth, and PostgreSQL.
+A production-grade, full-stack Kanban board where multiple users collaborate on shared boards in real-time. Changes sync instantly across every connected client via WebSockets.
+
+**Live Demo:** _[Add your deployment URL here]_
+
+---
+
+## Features
+
+- **Real-time collaboration** — Task creates, edits, moves, and deletes sync live to all board members via Socket.IO
+- **Live user cursors** — See where other collaborators are hovering, with name labels (throttled to 50ms)
+- **Activity feed** — Live stream of every action on the board, persisted to DB and loaded on open
+- **Kanban board** — Drag-and-drop between columns using @dnd-kit with smooth animations
+- **Task management** — Priority levels, assignees, due dates, descriptions — all editable inline via slide-over panel
+- **"X is editing..." indicator** — See when another user is actively editing the same task
+- **Board invites** — Generate 8-character invite codes; share and join boards instantly
+- **JWT authentication** — Stateless auth with 7-day token lifetime; validated on every app load
+- **Optimistic updates** — UI responds immediately; rolls back on server error
+- **Dark theme** — Carefully crafted slate-based palette with indigo accents
+
+---
+
+## Architecture Decisions
+
+**Why Zustand?** Zero-boilerplate, selector-based subscriptions, and tiny bundle footprint. Stores are plain objects with actions — easy to reason about.
+
+**Why Socket.IO rooms?** Each board becomes a `board:<id>` room. The server never broadcasts to users who aren't on that board — scalable without application-level filtering.
+
+**Why optimistic updates?** The UI updates immediately on user action, and the server confirms or rolls back. This makes the app feel instantaneous even under poor network conditions.
+
+**Why PostgreSQL?** Relational integrity between users, boards, tasks, and activity logs is load-bearing. UUIDs via `pgcrypto` avoid auto-increment collisions in distributed scenarios.
+
+---
+
+## Tech Stack
 
 ## Tech Stack
 
