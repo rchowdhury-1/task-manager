@@ -17,16 +17,25 @@ const setupSocket = (io) => {
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id} (user: ${socket.userId})`);
 
+    // ── Personal OS: join user's private room ────────────────────────────────
+    socket.join(`user:${socket.userId}`);
+    console.log(`User ${socket.userId} joined personal room`);
+
+    // ── Original board rooms (TaskFlow compatibility) ────────────────────────
     socket.on('join-board', (boardId) => {
       socket.join(`board:${boardId}`);
-      console.log(`User ${socket.userId} joined board ${boardId}`);
     });
 
     socket.on('leave-board', (boardId) => {
       socket.leave(`board:${boardId}`);
     });
 
-    // Card events
+    // Personal OS room management
+    socket.on('join-personal-os', () => {
+      socket.join(`user:${socket.userId}`);
+    });
+
+    // Card events (TaskFlow)
     socket.on('card-moved', (data) => {
       socket.to(`board:${data.boardId}`).emit('card-moved', { ...data, movedBy: socket.userId });
     });
@@ -43,7 +52,7 @@ const setupSocket = (io) => {
       socket.to(`board:${data.boardId}`).emit('card-deleted', { ...data, deletedBy: socket.userId });
     });
 
-    // Column events
+    // Column events (TaskFlow)
     socket.on('column-created', (data) => {
       socket.to(`board:${data.boardId}`).emit('column-created', { ...data, createdBy: socket.userId });
     });
@@ -56,7 +65,7 @@ const setupSocket = (io) => {
       socket.to(`board:${data.boardId}`).emit('column-deleted', { ...data, deletedBy: socket.userId });
     });
 
-    // Comment events
+    // Comment events (TaskFlow)
     socket.on('comment-created', (data) => {
       socket.to(`board:${data.boardId}`).emit('comment-created', data);
     });

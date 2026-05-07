@@ -1,8 +1,11 @@
 const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 10,
 });
 
 pool.on('error', (err) => {
@@ -15,6 +18,7 @@ const query = (text, params) => pool.query(text, params);
 const initDB = async () => {
   const client = await pool.connect();
   try {
+    // Original TaskFlow schema
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -92,6 +96,12 @@ const initDB = async () => {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
+
+    // Personal OS migration
+    const migrationPath = path.join(__dirname, '../db/migrations/001_personal_os.sql');
+    const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+    await client.query(migrationSQL);
+
     console.log('Database initialized successfully');
   } finally {
     client.release();

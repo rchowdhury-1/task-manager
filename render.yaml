@@ -1,9 +1,10 @@
 services:
   - type: web
-    name: task-manager-backend
+    name: personal-os-backend
     runtime: node
-    buildCommand: cd server && npm install && npm run build
-    startCommand: cd server && node dist/server.js
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -14,6 +15,8 @@ services:
       - key: REFRESH_SECRET
         sync: false
       - key: CLIENT_URL
+        sync: false
+      - key: GROQ_API_KEY
         sync: false
       - key: PORT
         value: 5000

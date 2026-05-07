@@ -20,7 +20,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       api.get('/auth/me')
-        .then((res) => setUser(res.data.user))
+        .then((res) => {
+          // Handle both { user: {...} } and direct user object
+          setUser(res.data.user || res.data);
+        })
         .catch(() => {
           localStorage.removeItem('accessToken');
           setUser(null);
@@ -33,13 +36,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password });
-    localStorage.setItem('accessToken', res.data.token);
+    // Backend returns both 'accessToken' and 'token' for compatibility
+    const token = res.data.accessToken || res.data.token;
+    localStorage.setItem('accessToken', token);
     setUser(res.data.user);
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const res = await api.post('/auth/register', { display_name: name, email, password });
-    localStorage.setItem('accessToken', res.data.token);
+    const res = await api.post('/auth/register', { name, display_name: name, email, password });
+    const token = res.data.accessToken || res.data.token;
+    localStorage.setItem('accessToken', token);
     setUser(res.data.user);
   };
 

@@ -1,25 +1,41 @@
 {
   "name": "task-manager-backend",
   "version": "1.0.0",
-  "description": "Real-Time Task Manager Backend",
+  "description": "Personal OS Backend — built on TaskFlow",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test": "jest --runInBand --forceExit",
+    "test:integration": "jest --runInBand --forceExit --testPathPattern=integration"
   },
   "dependencies": {
+    "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-validator": "^7.0.1",
+    "groq-sdk": "^0.9.1",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.3",
     "socket.io": "^4.6.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ],
+    "setupFiles": [
+      "<rootDir>/src/__tests__/setup.js"
+    ]
   }
 }

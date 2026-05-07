@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
+import { PersonalOSProvider } from './contexts/PersonalOSContext';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -12,25 +13,27 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <SocketProvider>
-          <App />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: '#1a1a1a',
-                color: '#f1f5f9',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                borderRadius: '8px',
-              },
-              success: {
-                iconTheme: { primary: '#10b981', secondary: '#0a0a0a' },
-              },
-              error: {
-                iconTheme: { primary: '#ef4444', secondary: '#0a0a0a' },
-              },
-            }}
-          />
+          <PersonalOSProvider>
+            <App />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#1a1a1a',
+                  color: '#f1f5f9',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  borderRadius: '8px',
+                },
+                success: {
+                  iconTheme: { primary: '#10b981', secondary: '#0a0a0a' },
+                },
+                error: {
+                  iconTheme: { primary: '#ef4444', secondary: '#0a0a0a' },
+                },
+              }}
+            />
+          </PersonalOSProvider>
         </SocketProvider>
       </AuthProvider>
     </BrowserRouter>
