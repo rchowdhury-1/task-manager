@@ -17,7 +17,7 @@ export default function ClaudeBar() {
     setWarnings([]);
     try {
       const res = await api.post<{ summary: string; warnings: string[] }>(
-        '/claude-update',
+        '/groq-update',
         { message: msg.trim() }
       );
       const { summary, warnings: newWarnings } = res.data;

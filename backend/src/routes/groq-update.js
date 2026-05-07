@@ -171,12 +171,12 @@ const handlers = {
     if (result.rows.length === 0) throw new Error(`Task ${op.task_id} not found`);
     await client.query(
       'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
-      [op.task_id, userId, 'claude_update', JSON.stringify({ type: 'move_task', new_status: op.new_status })]
+      [op.task_id, userId, 'groq_update', JSON.stringify({ type: 'move_task', new_status: op.new_status })]
     );
     if (op.new_status === 'done') {
       await client.query(
         'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
-        [op.task_id, userId, 'completed', JSON.stringify({ via: 'claude' })]
+        [op.task_id, userId, 'completed', JSON.stringify({ via: 'groq' })]
       );
     }
     return result.rows[0];
@@ -203,7 +203,7 @@ const handlers = {
 
     await client.query(
       'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
-      [op.task_id, userId, 'claude_update', JSON.stringify({ type: 'update_task', fields: updates })]
+      [op.task_id, userId, 'groq_update', JSON.stringify({ type: 'update_task', fields: updates })]
     );
     return result.rows[0];
   },
@@ -240,7 +240,7 @@ const handlers = {
     );
     await client.query(
       'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
-      [op.task_id, userId, 'claude_update', JSON.stringify({ type: 'complete_next_step', index: op.step_index })]
+      [op.task_id, userId, 'groq_update', JSON.stringify({ type: 'complete_next_step', index: op.step_index })]
     );
     return result.rows[0];
   },
@@ -254,7 +254,7 @@ const handlers = {
     );
     await client.query(
       'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
-      [result.rows[0].id, userId, 'created', JSON.stringify({ via: 'claude' })]
+      [result.rows[0].id, userId, 'created', JSON.stringify({ via: 'groq' })]
     );
     return result.rows[0];
   },
@@ -316,7 +316,7 @@ router.post('/', async (req, res, next) => {
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
     const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace('<BOARD_STATE>', JSON.stringify(contextSnapshot, null, 2));
 
-    let claudeText;
+    let groqText;
     try {
       const response = await Promise.race([
         groq.chat.completions.create({
@@ -328,31 +328,31 @@ router.post('/', async (req, res, next) => {
             { role: 'user', content: message.trim() },
           ],
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Claude timeout')), 15000)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 15000)),
       ]);
-      claudeText = response.choices[0]?.message?.content || '';
+      groqText = response.choices[0]?.message?.content || '';
     } catch (err) {
-      if (err.message === 'Claude timeout') {
-        return res.status(504).json({ error: 'Claude did not respond in time — try again' });
+      if (err.message === 'Groq timeout') {
+        return res.status(504).json({ error: 'Groq did not respond in time — try again' });
       }
       throw err;
     }
 
-    // Step 3 — Parse Claude response
+    // Step 3 — Parse Groq response
     let diff;
     try {
       // Strip markdown code fences if present
-      const cleaned = claudeText.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
+      const cleaned = groqText.replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '').trim();
       diff = JSON.parse(cleaned);
     } catch {
       return res.status(422).json({
-        error: 'Claude returned an unexpected format',
-        raw: claudeText.slice(0, 200),
+        error: 'Groq returned an unexpected format',
+        raw: groqText.slice(0, 200),
       });
     }
 
     if (!diff.operations || !Array.isArray(diff.operations)) {
-      return res.status(422).json({ error: 'Claude returned an unexpected format' });
+      return res.status(422).json({ error: 'Groq returned an unexpected format' });
     }
 
     // Step 4 — Validate and execute
@@ -393,7 +393,7 @@ router.post('/', async (req, res, next) => {
 
     // Step 5 — Broadcast
     const io = req.app.get('io');
-    io?.to(`user:${userId}`).emit('board:refresh', { triggeredBy: 'claude' });
+    io?.to(`user:${userId}`).emit('board:refresh', { triggeredBy: 'groq' });
 
     // Step 6 — Return
     res.json({

@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const { initDB } = require('./config/db');
+const { initDB, pool } = require('./config/db');
 const { errorHandler } = require('./middleware/errorHandler');
 const { setupSocket } = require('./socket/handlers');
 
@@ -22,7 +22,8 @@ const taskRoutes        = require('./routes/tasks');
 const habitRoutes       = require('./routes/habits');
 const dayRuleRoutes     = require('./routes/day-rules');
 const recurringRoutes   = require('./routes/recurring');
-const claudeUpdateRoutes = require('./routes/claude-update');
+const groqUpdateRoutes   = require('./routes/groq-update');
+const { authenticate: requireAuth } = require('./middleware/auth');
 
 const app = express();
 const server = http.createServer(app);
@@ -72,28 +73,23 @@ app.use('/api/tasks',          taskRoutes);
 app.use('/api/habits',         habitRoutes);
 app.use('/api/day-rules',      dayRuleRoutes);
 app.use('/api/recurring',      recurringRoutes);
-app.use('/api/claude-update',  claudeUpdateRoutes);
+app.use('/api/groq-update',    requireAuth, groqUpdateRoutes);
 
 // CalDAV sync status endpoint (polled by frontend)
-app.get('/api/caldav-status', require('./middleware/auth').authenticate, async (req, res, next) => {
+app.get('/api/caldav-status', requireAuth, async (req, res) => {
   try {
-    const { query } = require('./config/db');
-    const { isConfigured } = require('./lib/caldav');
-
-    if (!isConfigured()) return res.json({ status: 'disabled' });
-
-    const last = await query(
-      `SELECT status FROM caldav_sync_log WHERE user_id=$1 ORDER BY attempted_at DESC LIMIT 1`,
+    const { rows } = await pool.query(
+      `SELECT status, error_message, created_at
+       FROM caldav_sync_log
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 1`,
       [req.user.userId]
     );
-
-    const status = last.rows.length === 0 ? 'synced'
-      : last.rows[0].status === 'success' ? 'synced'
-      : last.rows[0].status === 'failed' ? 'error'
-      : 'pending';
-
-    res.json({ status });
-  } catch (err) { next(err); }
+    res.json(rows[0] || { status: 'not_configured' });
+  } catch (err) {
+    res.json({ status: 'not_configured' });
+  }
 });
 
 setupSocket(io);

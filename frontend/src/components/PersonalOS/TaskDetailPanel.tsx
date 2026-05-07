@@ -31,7 +31,7 @@ const STATUS_OPTIONS: { value: Task['status']; label: string }[] = [
 const ACTION_COLOR: Record<string, string> = {
   created:      '#4ADE80',
   completed:    '#60A5FA',
-  claude_update:'#C084FC',
+  groq_update:'#C084FC',
   moved:        '#FCD34D',
   status_change:'#FCD34D',
   note_added:   '#98989F',
@@ -50,7 +50,7 @@ function actionLabel(action: string, payload: Record<string, unknown>): string {
   switch (action) {
     case 'created': return 'Task created';
     case 'completed': return 'Marked as done';
-    case 'claude_update': return `AI: ${String(payload.type ?? 'update')}`;
+    case 'groq_update': return `AI: ${String(payload.type ?? 'update')}`;
     case 'moved': return `Moved to ${String(payload.new_status ?? '')}`;
     case 'note_added': return 'Note added';
     case 'next_step_added': return 'Step added';

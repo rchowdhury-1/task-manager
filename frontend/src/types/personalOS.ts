@@ -24,7 +24,7 @@ export interface TaskActivity {
   id: string
   task_id: string
   user_id: string
-  action: 'created' | 'moved' | 'note_added' | 'next_step_added' | 'completed' | 'claude_update'
+  action: 'created' | 'moved' | 'note_added' | 'next_step_added' | 'completed' | 'groq_update'
   payload: Record<string, unknown>
   created_at: string
 }
