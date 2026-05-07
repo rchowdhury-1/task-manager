@@ -33,6 +33,15 @@ CREATE TABLE IF NOT EXISTS tasks (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Idempotent column guards: if tasks table pre-existed with old schema, add any missing columns
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS category VARCHAR(50) NOT NULL DEFAULT 'career';
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority SMALLINT DEFAULT 2;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'backlog';
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS next_steps JSONB DEFAULT '[]';
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS time_logged_minutes INT DEFAULT 0;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS last_left_off TEXT;
+
 -- Performance indexes
 CREATE INDEX IF NOT EXISTS idx_tasks_user_status   ON tasks(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_tasks_user_day      ON tasks(user_id, assigned_day);

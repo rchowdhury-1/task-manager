@@ -79,10 +79,10 @@ app.use('/api/groq-update',    requireAuth, groqUpdateRoutes);
 app.get('/api/caldav-status', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT status, error_message, created_at
+      `SELECT status, error_message, attempted_at
        FROM caldav_sync_log
        WHERE user_id = $1
-       ORDER BY created_at DESC
+       ORDER BY attempted_at DESC
        LIMIT 1`,
       [req.user.userId]
     );
