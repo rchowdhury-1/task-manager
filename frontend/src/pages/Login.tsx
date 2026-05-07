@@ -2,7 +2,6 @@ import { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import Button from '../components/UI/Button';
 
 export default function Login() {
   const { login } = useAuth();
@@ -69,9 +68,14 @@ export default function Login() {
               />
             </div>
 
-            <Button type="submit" loading={loading} className="w-full py-3" size="lg">
-              Sign in
-            </Button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-lg text-sm font-semibold transition-opacity disabled:opacity-60"
+              style={{ background: 'var(--primary)', color: '#000' }}
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
           </form>
 
           <p className="text-center text-sm mt-6" style={{ color: 'var(--text-muted)' }}>

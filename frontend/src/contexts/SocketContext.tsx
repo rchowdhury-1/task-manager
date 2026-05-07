@@ -4,11 +4,9 @@ import { useAuth } from './AuthContext';
 
 interface SocketContextType {
   socket: Socket | null;
-  joinBoard: (boardId: string) => void;
-  leaveBoard: (boardId: string) => void;
 }
 
-const SocketContext = createContext<SocketContextType>({ socket: null, joinBoard: () => {}, leaveBoard: () => {} });
+const SocketContext = createContext<SocketContextType>({ socket: null });
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
@@ -36,16 +34,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user]);
 
-  const joinBoard = (boardId: string) => {
-    socketRef.current?.emit('join-board', boardId);
-  };
-
-  const leaveBoard = (boardId: string) => {
-    socketRef.current?.emit('leave-board', boardId);
-  };
-
   return (
-    <SocketContext.Provider value={{ socket: socketRef.current, joinBoard, leaveBoard }}>
+    <SocketContext.Provider value={{ socket: socketRef.current }}>
       {children}
     </SocketContext.Provider>
   );

@@ -1,11 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import BoardPage from './pages/BoardPage';
-import WorkspaceSettings from './pages/WorkspaceSettings';
 import PersonalOSPage from './pages/PersonalOS/PersonalOSPage';
 import BoardsPage from './pages/PersonalOS/BoardsPage';
 import TodayPage from './pages/PersonalOS/TodayPage';
@@ -14,11 +10,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#10b981', borderTopColor: 'transparent' }} />
-          <p style={{ color: 'var(--text-muted)' }} className="text-sm">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#1C1C1E]">
+        <div className="w-6 h-6 border-2 border-t-transparent border-[#C084FC] rounded-full animate-spin" />
       </div>
     );
   }
@@ -28,29 +21,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return null;
-  return user ? <Navigate to="/dashboard" replace /> : <>{children}</>;
+  return user ? <Navigate to="/os/week" replace /> : <>{children}</>;
 };
 
 export default function App() {
   return (
     <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
-      {/* TaskFlow routes */}
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/board/:boardId" element={<ProtectedRoute><BoardPage /></ProtectedRoute>} />
-      <Route path="/workspace/:workspaceId/settings" element={<ProtectedRoute><WorkspaceSettings /></ProtectedRoute>} />
-
-      {/* Personal OS routes */}
       <Route path="/os" element={<Navigate to="/os/week" replace />} />
       <Route path="/os/week" element={<ProtectedRoute><PersonalOSPage /></ProtectedRoute>} />
       <Route path="/os/boards" element={<ProtectedRoute><BoardsPage /></ProtectedRoute>} />
       <Route path="/os/today" element={<ProtectedRoute><TodayPage /></ProtectedRoute>} />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Catch-all → week view for authenticated, login for guests */}
+      <Route path="*" element={<Navigate to="/os/week" replace />} />
     </Routes>
   );
 }
