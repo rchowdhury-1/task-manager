@@ -3,6 +3,7 @@ import {
   useRef, ReactNode,
 } from 'react';
 import api from '../api/axios';
+import { useAuth } from './AuthContext';
 import { useSocket } from './SocketContext';
 import {
   Task, Habit, DayRule, RecurringTask, CaldavStatus, ClaudeOperation,
@@ -33,8 +34,10 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
   const [caldavStatus, setCaldavStatus] = useState<CaldavStatus>('synced');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const { socket } = useSocket();
   const caldavPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const activeTaskIdRef = useRef<string | null>(null);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -65,6 +68,8 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+
     fetchAll();
     fetchCaldavStatus();
 
@@ -73,7 +78,7 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       if (caldavPollRef.current) clearInterval(caldavPollRef.current);
     };
-  }, [fetchAll, fetchCaldavStatus]);
+  }, [user, fetchAll, fetchCaldavStatus]);
 
   // Socket.IO listeners
   useEffect(() => {
@@ -91,7 +96,7 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
 
     const onTaskDeleted = ({ id }: { id: string }) => {
       setTasks((prev) => prev.filter((t) => t.id !== id));
-      if (activeTaskId === id) setActiveTaskId(null);
+      if (activeTaskIdRef.current === id) setActiveTaskId(null);
     };
 
     socket.on('board:refresh', onBoardRefresh);
@@ -103,7 +108,12 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
       socket.off('task:updated', onTaskUpdated);
       socket.off('task:deleted', onTaskDeleted);
     };
-  }, [socket, activeTaskId, fetchAll]);
+  }, [socket, fetchAll]);
+
+  const setActiveTask = useCallback((id: string | null) => {
+    activeTaskIdRef.current = id;
+    setActiveTaskId(id);
+  }, []);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, ...updates } : t));
@@ -184,7 +194,7 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
       tasks, recurringTasks, dayRules, habits,
       caldavStatus, activeTaskId, loading,
       refetch: fetchAll,
-      setActiveTask: setActiveTaskId,
+      setActiveTask,
       updateTask, applyClaudeDiff, toggleHabit,
     }}>
       {children}
