@@ -20,6 +20,7 @@ interface PersonalOSContextType {
   refetch: () => Promise<void>
   setActiveTask: (id: string | null) => void
   updateTask: (id: string, updates: Partial<Task>) => void
+  deleteTask: (id: string) => void
   applyClaudeDiff: (operations: ClaudeOperation[]) => void
   toggleHabit: (habitId: string, date?: string) => Promise<void>
 }
@@ -119,6 +120,10 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, ...updates } : t));
   }, []);
 
+  const deleteTask = useCallback((id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   const applyClaudeDiff = useCallback((operations: ClaudeOperation[]) => {
     for (const op of operations) {
       switch (op.type) {
@@ -196,7 +201,7 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
       caldavStatus, activeTaskId, loading,
       refetch: fetchAll,
       setActiveTask,
-      updateTask, applyClaudeDiff, toggleHabit,
+      updateTask, deleteTask, applyClaudeDiff, toggleHabit,
     }}>
       {children}
     </PersonalOSContext.Provider>

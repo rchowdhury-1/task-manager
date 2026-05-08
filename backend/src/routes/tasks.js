@@ -144,10 +144,13 @@ router.patch('/:id', async (req, res, next) => {
       );
     }
 
-    // Socket broadcast on significant changes
+    // Socket broadcast
     const io = req.app.get('io');
-    const sigFields = ['status', 'assigned_day', 'scheduled_time', 'priority'];
-    if (sigFields.some((f) => updates[f] !== undefined)) {
+    if (updates.status !== undefined) {
+      // Status change: board:refresh so all columns re-sort correctly
+      io?.to(`user:${userId}`).emit('board:refresh', { triggeredBy: 'task_updated' });
+    } else {
+      // Field change: in-place update is enough
       io?.to(`user:${userId}`).emit('task:updated', task);
     }
 

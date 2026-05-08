@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { marked } from 'marked';
+import toast from 'react-hot-toast';
 import api from '../../api/axios';
 import { usePersonalOS } from '../../contexts/PersonalOSContext';
 import { Task, TaskActivity, CATEGORY_LABELS } from '../../types/personalOS';
@@ -30,12 +31,12 @@ const STATUS_OPTIONS: { value: Task['status']; label: string }[] = [
 ];
 
 const ACTION_COLOR: Record<string, string> = {
-  created:      '#4ADE80',
-  completed:    '#60A5FA',
-  groq_update:'#C084FC',
-  moved:        '#FCD34D',
-  status_change:'#FCD34D',
-  note_added:   '#98989F',
+  created:         '#4ADE80',
+  completed:       '#60A5FA',
+  groq_update:     '#C084FC',
+  moved:           '#FCD34D',
+  status_change:   '#FCD34D',
+  note_added:      '#98989F',
   next_step_added: '#98989F',
 };
 
@@ -49,13 +50,13 @@ function formatMinutes(minutes: number): string {
 
 function actionLabel(action: string, payload: Record<string, unknown>): string {
   switch (action) {
-    case 'created': return 'Task created';
-    case 'completed': return 'Marked as done';
-    case 'groq_update': return `AI: ${String(payload.type ?? 'update')}`;
-    case 'moved': return `Moved to ${String(payload.new_status ?? '')}`;
-    case 'note_added': return 'Note added';
-    case 'next_step_added': return 'Step added';
-    default: return action.replace(/_/g, ' ');
+    case 'created':         return 'Task created';
+    case 'completed':       return 'Marked as done';
+    case 'groq_update':     return `AI: ${String(payload.type ?? 'update')}`;
+    case 'moved':           return `Moved: ${String(payload.from ?? '')} → ${String(payload.to ?? '')}`;
+    case 'note_added':      return 'Note added';
+    case 'next_step_added': return 'Step updated';
+    default:                return action.replace(/_/g, ' ');
   }
 }
 
@@ -84,7 +85,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── TaskDetailPanel ──────────────────────────────────────────────────────────
 
 export default function TaskDetailPanel() {
-  const { activeTaskId, setActiveTask, updateTask } = usePersonalOS();
+  const { activeTaskId, setActiveTask, updateTask, deleteTask } = usePersonalOS();
   const [task, setTask] = useState<Task | null>(null);
   const [loadingTask, setLoadingTask] = useState(true);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -93,6 +94,7 @@ export default function TaskDetailPanel() {
   const [logMinutes, setLogMinutes] = useState('');
   const [newStep, setNewStep] = useState('');
   const [visible, setVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -121,22 +123,42 @@ export default function TaskDetailPanel() {
 
   const scheduleSave = useCallback((updates: Partial<Task>) => {
     if (!task) return;
+    const originalTask = task;
     const newTask = { ...task, ...updates };
     setTask(newTask);
     setSaveState('saving');
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(async () => {
       try {
-        await api.patch(`/tasks/${task.id}`, updates);
-        updateTask(task.id, updates);
+        await api.patch(`/tasks/${originalTask.id}`, updates);
+        updateTask(originalTask.id, updates);
         setSaveState('saved');
         if (savedTimeout.current) clearTimeout(savedTimeout.current);
         savedTimeout.current = setTimeout(() => setSaveState('idle'), 2000);
       } catch {
+        setTask(originalTask); // revert local state on error
         setSaveState('idle');
+        toast.error('Failed to save changes', {
+          style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+        });
       }
     }, 800);
   }, [task, updateTask]);
+
+  const handleDelete = async () => {
+    if (!task || deleting) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/tasks/${task.id}`);
+      deleteTask(task.id);
+      setActiveTask(null);
+    } catch {
+      toast.error('Failed to delete task', {
+        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+      });
+      setDeleting(false);
+    }
+  };
 
   if (!activeTaskId) return null;
 
@@ -262,7 +284,11 @@ export default function TaskDetailPanel() {
                           const updated = { ...task, next_steps: newSteps };
                           setTask(updated);
                           updateTask(task.id, { next_steps: newSteps });
-                        } catch { /* silent */ }
+                        } catch {
+                          toast.error('Failed to update step', {
+                            style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+                          });
+                        }
                       }}
                       className="w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center text-[10px] font-bold transition-all"
                       style={{
@@ -299,7 +325,11 @@ export default function TaskDetailPanel() {
                       setTask(updated);
                       updateTask(task.id, { next_steps: newSteps });
                       setNewStep('');
-                    } catch { /* silent */ }
+                    } catch {
+                      toast.error('Failed to add step', {
+                        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+                      });
+                    }
                   }
                 }}
                 placeholder="Add a step… (Enter to save)"
@@ -441,7 +471,7 @@ export default function TaskDetailPanel() {
 
             {/* ── ACTIVITY LOG ── */}
             {task.activity_log && task.activity_log.length > 0 && (
-              <div>
+              <div className="mb-5">
                 <SectionLabel>Activity</SectionLabel>
                 <div className="space-y-2">
                   {[...task.activity_log].reverse().map((entry: TaskActivity) => (
@@ -466,6 +496,24 @@ export default function TaskDetailPanel() {
                 </div>
               </div>
             )}
+
+            {/* ── DELETE ── */}
+            <div className="pt-4 border-t border-[#48484A]">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full text-sm py-2 rounded-lg border transition-colors"
+                style={{
+                  color: deleting ? '#98989F' : '#E24B4A',
+                  borderColor: deleting ? '#48484A' : 'rgba(226,75,74,0.3)',
+                  background: 'transparent',
+                }}
+                onMouseEnter={e => { if (!deleting) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(226,75,74,0.08)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+              >
+                {deleting ? 'Deleting…' : 'Delete task'}
+              </button>
+            </div>
           </div>
         )}
       </div>

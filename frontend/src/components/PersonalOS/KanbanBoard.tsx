@@ -57,13 +57,14 @@ const CATEGORY_FILTERS = [
 // ─── TaskCard ─────────────────────────────────────────────────────────────────
 
 function TaskCard({ task, overlay = false }: { task: Task; overlay?: boolean }) {
-  const { setActiveTask } = usePersonalOS();
+  const { setActiveTask, updateTask } = usePersonalOS();
   const {
     attributes, listeners, setNodeRef, transform, transition, isDragging,
   } = useSortable({ id: task.id });
 
   const ps = PRIORITY_STYLES[task.priority] ?? PRIORITY_STYLES[3];
   const catCls = CATEGORY_BADGE[task.category] ?? 'bg-[#2A2A2A] text-[#98989F]';
+  const isDone = task.status === 'done';
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -71,19 +72,52 @@ function TaskCard({ task, overlay = false }: { task: Task; overlay?: boolean }) 
     opacity: isDragging ? 0.4 : 1,
   };
 
+  const handleDone = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newStatus: Status = isDone ? 'in_progress' : 'done';
+    updateTask(task.id, { status: newStatus }); // optimistic
+    try {
+      await api.patch(`/tasks/${task.id}`, { status: newStatus });
+    } catch {
+      updateTask(task.id, { status: task.status }); // revert
+      toast.error('Failed to update task', {
+        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+      });
+    }
+  };
+
   return (
     <div
       ref={!overlay ? setNodeRef : undefined}
-      style={{ ...style, background: ps.bg, borderLeftColor: ps.border }}
+      style={{ ...style, background: isDone ? '#1E2A1E' : ps.bg, borderLeftColor: isDone ? '#1D9E75' : ps.border }}
       {...(!overlay ? { ...attributes, ...listeners } : {})}
       onClick={() => setActiveTask(task.id)}
-      className="rounded-lg p-3 mb-2 border-l-2 cursor-pointer transition-colors"
+      className="rounded-lg p-3 mb-2 border-l-2 cursor-pointer transition-colors group"
       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = '#48484A'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = ps.bg; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isDone ? '#1E2A1E' : ps.bg; }}
     >
-      {/* Row 1: title + priority dot */}
-      <div className="flex items-start justify-between gap-2 mb-1.5">
-        <p className="text-sm font-medium text-[#F5F5F7] leading-snug flex-1">{task.title}</p>
+      {/* Row 1: done checkbox + title + priority dot */}
+      <div className="flex items-start gap-2 mb-1.5">
+        <button
+          onClick={handleDone}
+          className="w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center text-[10px] font-bold transition-all"
+          style={{
+            background: isDone ? '#1D9E75' : 'transparent',
+            borderColor: isDone ? '#1D9E75' : '#48484A',
+            color: '#fff',
+          }}
+        >
+          {isDone ? '✓' : ''}
+        </button>
+        <p
+          className="text-sm font-medium leading-snug flex-1"
+          style={{
+            color: isDone ? '#98989F' : '#F5F5F7',
+            textDecoration: isDone ? 'line-through' : 'none',
+          }}
+        >
+          {task.title}
+        </p>
         <div
           className="w-2 h-2 rounded-full shrink-0 mt-1"
           style={{ background: PRIORITY_DOT[task.priority] ?? '#48484A' }}
@@ -95,6 +129,11 @@ function TaskCard({ task, overlay = false }: { task: Task; overlay?: boolean }) 
           {CATEGORY_LABELS[task.category]}
         </span>
         <span className="text-[10px] text-[#98989F]">{task.duration_minutes}m</span>
+        {task.next_steps.length > 0 && (
+          <span className="text-[10px] text-[#98989F]">
+            {task.next_steps.filter(s => s.done).length}/{task.next_steps.length} steps
+          </span>
+        )}
       </div>
       {/* Row 3: assigned day */}
       {task.assigned_day && (
@@ -112,9 +151,11 @@ function AddTaskForm({ status, onClose }: { status: Status; onClose: () => void 
   const { refetch } = usePersonalOS();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Task['category']>('career');
+  const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!title.trim()) { onClose(); return; }
+    if (!title.trim() || saving) { if (!title.trim()) onClose(); return; }
+    setSaving(true);
     try {
       await api.post('/tasks', {
         title: title.trim(),
@@ -127,7 +168,10 @@ function AddTaskForm({ status, onClose }: { status: Status; onClose: () => void 
       onClose();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to create task';
-      toast.error(msg);
+      toast.error(msg, {
+        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+      });
+      setSaving(false);
     }
   };
 
@@ -156,9 +200,10 @@ function AddTaskForm({ status, onClose }: { status: Status; onClose: () => void 
         </select>
         <button
           onClick={handleSave}
-          className="text-xs px-2 py-1 rounded bg-[#C084FC] text-black font-medium"
+          disabled={saving}
+          className="text-xs px-2 py-1 rounded bg-[#C084FC] text-black font-medium disabled:opacity-50"
         >
-          Add
+          {saving ? '…' : 'Add'}
         </button>
         <button onClick={onClose} className="text-xs text-[#98989F] hover:text-[#F5F5F7]">✕</button>
       </div>
@@ -266,12 +311,15 @@ export default function KanbanBoard() {
     const newStatus: Status | undefined = overId.startsWith('col-')
       ? (overId.replace('col-', '') as Status)
       : tasks.find(t => t.id === overId)?.status;
-    if (!newStatus) return;
+    if (!newStatus || newStatus === originalStatus) return;
 
     try {
       await api.patch(`/tasks/${draggedTask.id}`, { status: newStatus });
     } catch {
       updateTask(draggedTask.id, { status: originalStatus });
+      toast.error('Failed to move task', {
+        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+      });
     }
   };
 
