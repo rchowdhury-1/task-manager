@@ -140,6 +140,17 @@ router.post('/logout', authenticate, async (req, res, next) => {
   }
 });
 
+// DELETE /api/auth/account — permanently deletes the logged-in user and all their data
+router.delete('/account', authenticate, async (req, res, next) => {
+  try {
+    await query('DELETE FROM users WHERE id=$1', [req.user.userId]);
+    res.clearCookie('refreshToken');
+    res.json({ message: 'Account deleted' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/auth/me — returns { user: {...} } to match AuthContext expectation
 router.get('/me', authenticate, async (req, res, next) => {
   try {
