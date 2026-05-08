@@ -1,10 +1,8 @@
 const express = require('express');
 const Groq = require('groq-sdk');
 const { query } = require('../config/db');
-const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
-router.use(authenticate);
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
@@ -66,6 +64,13 @@ ALLOWED OPERATIONS (you may only return these):
       "scheduled_time": "HH:MM or null"
     },
     {
+      "type": "create_habit",
+      "name": "string",
+      "category": "faith|body|growth",
+      "time_of_day": "morning|evening|anytime",
+      "duration_minutes": 15
+    },
+    {
       "type": "complete_habit",
       "habit_id": "<uuid>"
     },
@@ -97,9 +102,11 @@ If you cannot confidently parse the user's message into valid operations, return
 
 const VALID_STATUSES  = new Set(['backlog', 'this_week', 'in_progress', 'done']);
 const VALID_CATEGORIES = new Set(['career', 'lms', 'freelance', 'learning', 'uber', 'faith']);
+const VALID_HABIT_CATEGORIES = new Set(['faith', 'body', 'growth']);
+const VALID_TIMES_OF_DAY = new Set(['morning', 'evening', 'anytime']);
 const VALID_OP_TYPES  = new Set([
   'move_task', 'update_task', 'add_next_step', 'complete_next_step',
-  'create_task', 'complete_habit', 'resolve_recurring', 'schedule_warning',
+  'create_task', 'create_habit', 'complete_habit', 'resolve_recurring', 'schedule_warning',
 ]);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -144,6 +151,13 @@ const validateOp = (op) => {
         VALID_STATUSES.has(op.status) &&
         (op.assigned_day === null || !op.assigned_day || DATE_RE.test(op.assigned_day)) &&
         (op.scheduled_time === null || !op.scheduled_time || TIME_RE.test(op.scheduled_time))
+      );
+
+    case 'create_habit':
+      return (
+        typeof op.name === 'string' && op.name.length > 0 &&
+        VALID_HABIT_CATEGORIES.has(op.category) &&
+        (!op.time_of_day || VALID_TIMES_OF_DAY.has(op.time_of_day))
       );
 
     case 'complete_habit':
@@ -255,6 +269,20 @@ const handlers = {
     await client.query(
       'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
       [result.rows[0].id, userId, 'created', JSON.stringify({ via: 'groq' })]
+    );
+    return result.rows[0];
+  },
+
+  async create_habit(op, userId, client) {
+    const sortResult = await client.query(
+      'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM habits WHERE user_id=$1',
+      [userId]
+    );
+    const sortOrder = sortResult.rows[0].next_order;
+    const result = await client.query(
+      `INSERT INTO habits (user_id, name, category, time_of_day, duration_minutes, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [userId, sanitize(op.name, 100), op.category, op.time_of_day || 'anytime', op.duration_minutes || 15, sortOrder]
     );
     return result.rows[0];
   },

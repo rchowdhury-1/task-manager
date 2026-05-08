@@ -31,7 +31,7 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
   const [recurringTasks, setRecurringTasks] = useState<RecurringTask[]>([]);
   const [dayRules, setDayRules] = useState<DayRule[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [caldavStatus, setCaldavStatus] = useState<CaldavStatus>('synced');
+  const [caldavStatus, setCaldavStatus] = useState<CaldavStatus>('not_configured');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -133,6 +133,7 @@ export const PersonalOSProvider = ({ children }: { children: ReactNode }) => {
           ));
           break;
         case 'create_task':
+        case 'create_habit':
           // Full refetch on create — we don't have the DB-generated id
           fetchAll();
           break;

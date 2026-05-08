@@ -16,17 +16,25 @@ export default function ClaudeBar() {
     setLoading(true);
     setWarnings([]);
     try {
-      const res = await api.post<{ summary: string; warnings: string[] }>(
-        '/groq-update',
-        { message: msg.trim() }
-      );
-      const { summary, warnings: newWarnings } = res.data;
+      const res = await api.post<{
+        summary: string;
+        warnings: string[];
+        skipped: Array<{ op: unknown; reason: string }>;
+      }>('/groq-update', { message: msg.trim() });
+      const { summary, warnings: newWarnings, skipped } = res.data;
       await refetch();
       toast.success(summary || 'Done!', {
         duration: 4000,
         style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #48484A' },
         iconTheme: { primary: '#4ADE80', secondary: '#1C1C1E' },
       });
+      if (skipped && skipped.length > 0) {
+        toast(`${skipped.length} operation${skipped.length > 1 ? 's' : ''} couldn't be applied`, {
+          icon: '⚠️',
+          duration: 5000,
+          style: { background: '#2C2C2E', color: '#EF9F27', border: '1px solid #EF9F27' },
+        });
+      }
       if (newWarnings && newWarnings.length > 0) {
         setWarnings(newWarnings);
         setPendingMessage(msg);

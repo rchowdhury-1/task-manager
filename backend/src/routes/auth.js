@@ -88,6 +88,10 @@ router.post('/login', [
     setRefreshCookie(res, refreshToken);
 
     const { password_hash, ...safeUser } = user;
+
+    // Seed Personal OS defaults if this user never got them (e.g. registered before seed existed)
+    setImmediate(() => seedUserDefaults(user.id));
+
     res.json({ accessToken, token: accessToken, user: safeUser });
   } catch (err) {
     next(err);
