@@ -10,10 +10,11 @@ const TaskDetailPanel = lazy(() => import('./TaskDetailPanel'));
 
 function CaldavDot({ status }: { status: CaldavStatus }) {
   const config: Record<CaldavStatus, { color: string; label: string }> = {
-    synced:   { color: '#4ADE80', label: 'Synced' },
-    pending:  { color: '#EF9F27', label: 'Syncing' },
-    error:    { color: '#E24B4A', label: 'Sync error' },
-    disabled: { color: '#EF9F27', label: 'Not configured' },
+    synced:        { color: '#4ADE80', label: 'Synced' },
+    pending:       { color: '#EF9F27', label: 'Syncing' },
+    error:         { color: '#E24B4A', label: 'Sync error' },
+    disabled:      { color: '#EF9F27', label: 'Not configured' },
+    not_configured: { color: '#EF9F27', label: 'Not configured' },
   };
   const { color, label } = config[status] ?? config.disabled;
   return (
