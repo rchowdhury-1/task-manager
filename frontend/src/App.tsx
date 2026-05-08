@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import PersonalOSPage from './pages/PersonalOS/PersonalOSPage';
 import BoardsPage from './pages/PersonalOS/BoardsPage';
 import TodayPage from './pages/PersonalOS/TodayPage';
+import SettingsPage from './pages/PersonalOS/SettingsPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/os/week" element={<ProtectedRoute><PersonalOSPage /></ProtectedRoute>} />
       <Route path="/os/boards" element={<ProtectedRoute><BoardsPage /></ProtectedRoute>} />
       <Route path="/os/today" element={<ProtectedRoute><TodayPage /></ProtectedRoute>} />
+      <Route path="/os/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
       {/* Catch-all → week view for authenticated, login for guests */}
       <Route path="*" element={<Navigate to="/os/week" replace />} />

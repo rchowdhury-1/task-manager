@@ -6,17 +6,55 @@ const router = express.Router();
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT_TEMPLATE = `You are the scheduling brain of a Personal OS for a freelance full-stack developer.
+const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function buildUserContext(dayRules, habits, recurring) {
+  const lines = [];
+
+  if (dayRules.length > 0) {
+    lines.push('Weekly schedule:');
+    for (const rule of dayRules) {
+      lines.push(`  - ${DAY_NAMES_FULL[rule.day_of_week]}: focus=${rule.focus_area || 'flex'}, max=${rule.max_focus_hours}h`);
+    }
+  }
+
+  if (habits.length > 0) {
+    lines.push('Active daily habits:');
+    for (const h of habits) {
+      lines.push(`  - ${h.name} (${h.category}, ${h.time_of_day}${h.duration_minutes ? `, ${h.duration_minutes}min` : ''})`);
+    }
+  }
+
+  if (recurring.length > 0) {
+    lines.push('Recurring commitments:');
+    for (const r of recurring) {
+      const days = Array.isArray(r.days_of_week)
+        ? r.days_of_week.map(d => DAY_NAMES_FULL[d].slice(0, 3)).join('/')
+        : 'daily';
+      const time = r.scheduled_time ? ` at ${r.scheduled_time}` : '';
+      lines.push(`  - ${r.title} (${r.category})${time} [${days}]${r.until_condition ? ` until: ${r.until_condition}` : ''}`);
+    }
+  }
+
+  return lines.length > 0 ? lines.join('\n') : 'No specific context configured yet.';
+}
+
+function buildDayRulesEnforcement(dayRules) {
+  if (dayRules.length === 0) {
+    return '- No day rules configured. Schedule tasks freely.';
+  }
+  const lines = dayRules.map(rule =>
+    `- ${DAY_NAMES_FULL[rule.day_of_week]}: focus=${rule.focus_area || 'any'}, max=${rule.max_focus_hours}h`
+  );
+  lines.push('- If a task\'s category conflicts with a day\'s focus area, return a schedule_warning and ask for confirmation');
+  lines.push('- If a day is already at max_focus_hours, return a schedule_warning');
+  return lines.join('\n');
+}
+
+const SYSTEM_PROMPT_TEMPLATE = `You are the scheduling brain of a Personal OS task management system.
 
 USER CONTEXT:
-- Looking for first dev role (Mercor, Outlier, full-time)
-- Freelancing on Fiverr and Upwork
-- Building an LMS as a client project
-- Doing Uber Eats 9–11pm every night (stops when dev role secured)
-- Daily Islamic practices: 5 prayers, Fajr, Jamaa where possible, Adkar (morning+evening), Salawat, Quran hifz 20min
-- Gym Mon/Wed/Fri
-- 20min coding learning every day at 5pm
-- Day rules: Mon=job hunt, Tue/Thu=LMS build, Wed=freelance, Fri=learning, Sat=flex, Sun=rest+Quran
+<USER_CONTEXT>
 
 BOARD STATE (injected per request as JSON):
 <BOARD_STATE>
@@ -92,11 +130,7 @@ ALLOWED OPERATIONS (you may only return these):
 }
 
 DAY RULE ENFORCEMENT:
-- Never assign a job_hunt task to Tue/Thu/Wed/Fri/Sat/Sun
-- Never assign an LMS task to Mon/Wed/Fri/Sat/Sun
-- Never assign a freelance task to Mon/Tue/Thu/Fri/Sun
-- If the user asks you to violate a rule, return a schedule_warning and ask for confirmation
-- If a day is already at max_focus_hours, return a schedule_warning
+<DAY_RULES_ENFORCEMENT>
 
 If you cannot confidently parse the user's message into valid operations, return:
 { "operations": [], "summary": "I didn't understand that — could you rephrase?", "warnings": [] }`;
@@ -349,7 +383,10 @@ router.post('/', async (req, res, next) => {
 
     // Step 2 — Call Groq API
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    const systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace('<BOARD_STATE>', JSON.stringify(contextSnapshot, null, 2));
+    const systemPrompt = SYSTEM_PROMPT_TEMPLATE
+      .replace('<USER_CONTEXT>', buildUserContext(dayRulesRes.rows, habitsRes.rows, recurringRes.rows))
+      .replace('<BOARD_STATE>', JSON.stringify(contextSnapshot, null, 2))
+      .replace('<DAY_RULES_ENFORCEMENT>', buildDayRulesEnforcement(dayRulesRes.rows));
 
     let groqText;
     try {

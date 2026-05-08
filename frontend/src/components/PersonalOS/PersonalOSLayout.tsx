@@ -28,23 +28,20 @@ function CaldavDot({ status }: { status: CaldavStatus }) {
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 
 function StatsBar() {
-  const { tasks, habits, recurringTasks } = usePersonalOS();
+  const { tasks, habits } = usePersonalOS();
   const today = new Date().toISOString().split('T')[0];
 
   const p1Count = tasks.filter(t => t.priority === 1 && t.status !== 'done').length;
   const activeCount = tasks.filter(t => t.status === 'this_week' || t.status === 'in_progress').length;
   const activeHabits = habits.filter(h => h.active);
   const doneToday = activeHabits.filter(h => h.completions.includes(today)).length;
-  const uberTask = recurringTasks.find(r => r.active && r.category === 'uber');
-  const uberTime = uberTask?.scheduled_time
-    ? formatTime(uberTask.scheduled_time)
-    : '9pm';
+  const doneCount = tasks.filter(t => t.status === 'done').length;
 
   const stats = [
     { label: 'P1 Urgent', value: p1Count.toString(), color: '#FF6B6B' },
     { label: 'This Week', value: activeCount.toString(), color: '#60A5FA' },
     { label: 'Habits', value: `${doneToday}/${activeHabits.length}`, color: '#4ADE80' },
-    { label: 'Uber starts', value: uberTime, color: '#FB923C' },
+    { label: 'Done', value: doneCount.toString(), color: '#FB923C' },
   ];
 
   return (
@@ -59,21 +56,13 @@ function StatsBar() {
   );
 }
 
-function formatTime(time: string): string {
-  const [hStr, mStr] = time.split(':');
-  const h = parseInt(hStr, 10);
-  const m = parseInt(mStr, 10);
-  const period = h >= 12 ? 'pm' : 'am';
-  const hour = h % 12 || 12;
-  return m === 0 ? `${hour}${period}` : `${hour}:${m.toString().padStart(2, '0')}${period}`;
-}
-
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 const NAV_TABS = [
-  { label: 'Week',   path: '/os/week' },
-  { label: 'Boards', path: '/os/boards' },
-  { label: 'Today',  path: '/os/today' },
+  { label: 'Week',     path: '/os/week' },
+  { label: 'Boards',   path: '/os/boards' },
+  { label: 'Today',    path: '/os/today' },
+  { label: 'Settings', path: '/os/settings' },
 ];
 
 export default function PersonalOSLayout({ children }: { children: ReactNode }) {
