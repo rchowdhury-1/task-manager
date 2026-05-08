@@ -22,35 +22,75 @@ const weekEnd = (date = new Date()) => {
   return d.toISOString().split('T')[0];
 };
 
-// GET /api/habits — habits + completions for current week
+// Compute streak: consecutive days ending today (or yesterday if today not done)
+function computeStreak(allDates) {
+  if (allDates.length === 0) return 0;
+  const dateSet = new Set(allDates);
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  // Streak must include today or yesterday to be active
+  let cursor = dateSet.has(today) ? today : (dateSet.has(yesterday) ? yesterday : null);
+  if (!cursor) return 0;
+
+  let streak = 0;
+  while (dateSet.has(cursor)) {
+    streak++;
+    const d = new Date(cursor + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    cursor = d.toISOString().split('T')[0];
+  }
+  return streak;
+}
+
+// GET /api/habits — habits + this-week completions + streak
 router.get('/', async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const wStart = weekStart();
-    const wEnd = weekEnd();
+    const wEnd   = weekEnd();
 
     const habitsResult = await query(
       'SELECT * FROM habits WHERE user_id=$1 AND active=TRUE ORDER BY sort_order ASC, id ASC',
       [userId]
     );
 
-    const completionsResult = await query(
+    // This week — for the completion dots
+    const weekResult = await query(
       `SELECT habit_id, completed_date FROM habit_completions
        WHERE user_id=$1 AND completed_date BETWEEN $2 AND $3`,
       [userId, wStart, wEnd]
     );
 
-    const completionsByHabit = {};
-    for (const row of completionsResult.rows) {
-      if (!completionsByHabit[row.habit_id]) completionsByHabit[row.habit_id] = [];
-      completionsByHabit[row.habit_id].push(row.completed_date.toISOString().split('T')[0]);
+    // Last 90 days — for streak calculation
+    const streakResult = await query(
+      `SELECT habit_id, completed_date FROM habit_completions
+       WHERE user_id=$1 AND completed_date >= CURRENT_DATE - INTERVAL '90 days'
+       ORDER BY completed_date ASC`,
+      [userId]
+    );
+
+    const weekByHabit = {};
+    for (const row of weekResult.rows) {
+      if (!weekByHabit[row.habit_id]) weekByHabit[row.habit_id] = [];
+      weekByHabit[row.habit_id].push(row.completed_date.toISOString().split('T')[0]);
     }
 
-    // Streak: consecutive completed days up to today
-    const habits = habitsResult.rows.map((h) => {
-      const completions = completionsByHabit[h.id] || [];
-      return { ...h, completions };
-    });
+    const allByHabit = {};
+    for (const row of streakResult.rows) {
+      if (!allByHabit[row.habit_id]) allByHabit[row.habit_id] = [];
+      allByHabit[row.habit_id].push(row.completed_date.toISOString().split('T')[0]);
+    }
+
+    const habits = habitsResult.rows.map((h) => ({
+      ...h,
+      completions: weekByHabit[h.id] || [],
+      streak_days: computeStreak(allByHabit[h.id] || []),
+    }));
 
     res.json(habits);
   } catch (err) { next(err); }

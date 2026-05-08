@@ -54,7 +54,7 @@ router.post('/register', [
     const user = result.rows[0];
 
     const { accessToken, refreshToken } = generateTokens(user.id);
-    await query('INSERT INTO refresh_tokens (token, user_id) VALUES ($1,$2)', [refreshToken, user.id]);
+    await query("INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1,$2, NOW() + interval '7 days')", [refreshToken, user.id]);
     setRefreshCookie(res, refreshToken);
 
     // Seed Personal OS defaults for new user
@@ -84,7 +84,7 @@ router.post('/login', [
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const { accessToken, refreshToken } = generateTokens(user.id);
-    await query('INSERT INTO refresh_tokens (token, user_id) VALUES ($1,$2)', [refreshToken, user.id]);
+    await query("INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1,$2, NOW() + interval '7 days')", [refreshToken, user.id]);
     setRefreshCookie(res, refreshToken);
 
     const { password_hash, ...safeUser } = user;
@@ -114,7 +114,7 @@ router.post('/refresh', async (req, res, next) => {
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
 
     await query('DELETE FROM refresh_tokens WHERE token=$1', [token]);
-    await query('INSERT INTO refresh_tokens (token, user_id) VALUES ($1,$2)', [newRefreshToken, decoded.userId]);
+    await query("INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1,$2, NOW() + interval '7 days')", [newRefreshToken, decoded.userId]);
     setRefreshCookie(res, newRefreshToken);
 
     res.json({ accessToken, token: accessToken, user: userResult.rows[0] });

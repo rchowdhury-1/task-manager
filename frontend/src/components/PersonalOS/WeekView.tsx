@@ -1,3 +1,4 @@
+import React from 'react';
 import { usePersonalOS } from '../../contexts/PersonalOSContext';
 import { Task, DayRule, RecurringTask, FOCUS_LABELS, CATEGORY_LABELS } from '../../types/personalOS';
 
@@ -37,27 +38,27 @@ function formatMinutes(minutes: number): string {
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
 const PRIORITY_STYLES: Record<number, { border: string; bg: string; text: string }> = {
-  1: { border: '#E24B4A', bg: '#2D1F1F', text: '#FF6B6B' },
-  2: { border: '#EF9F27', bg: '#2D2419', text: '#FFC068' },
-  3: { border: '#639922', bg: '#1E2A14', text: '#8DC642' },
+  1: { border: '#EF4444', bg: '#FEF2F2', text: '#DC2626' },
+  2: { border: '#F59E0B', bg: '#FFFBEB', text: '#D97706' },
+  3: { border: '#10B981', bg: '#ECFDF5', text: '#059669' },
 };
 
 const CATEGORY_BADGE: Record<string, string> = {
-  career:   'bg-[#1A2F4A] text-[#60A5FA]',
-  lms:      'bg-[#1A3A1A] text-[#4ADE80]',
-  freelance:'bg-[#3A2A0A] text-[#FCD34D]',
-  learning: 'bg-[#2A1A3A] text-[#C084FC]',
-  uber:     'bg-[#3A1A0A] text-[#FB923C]',
-  faith:    'bg-[#2A1A2A] text-[#F472B6]',
+  career:   'bg-blue-50 text-blue-600',
+  lms:      'bg-green-50 text-green-600',
+  freelance:'bg-yellow-50 text-yellow-700',
+  learning: 'bg-purple-50 text-purple-600',
+  uber:     'bg-orange-50 text-orange-600',
+  faith:    'bg-pink-50 text-pink-600',
 };
 
 const FOCUS_BADGE: Record<string, string> = {
-  job_hunt: 'bg-[#1A2F4A] text-[#60A5FA]',
-  lms:      'bg-[#1A3A1A] text-[#4ADE80]',
-  freelance:'bg-[#3A2A0A] text-[#FCD34D]',
-  learning: 'bg-[#2A1A3A] text-[#C084FC]',
-  rest:     'bg-[#2A2A2A] text-[#98989F]',
-  flex:     'bg-[#1A2A3A] text-[#67E8F9]',
+  job_hunt: 'bg-blue-50 text-blue-600',
+  lms:      'bg-green-50 text-green-600',
+  freelance:'bg-yellow-50 text-yellow-700',
+  learning: 'bg-purple-50 text-purple-600',
+  rest:     'bg-gray-100 text-gray-500',
+  flex:     'bg-cyan-50 text-cyan-600',
 };
 
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -67,7 +68,7 @@ const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 function TaskPill({ task }: { task: Task }) {
   const { setActiveTask } = usePersonalOS();
   const ps = PRIORITY_STYLES[task.priority] ?? PRIORITY_STYLES[3];
-  const catCls = CATEGORY_BADGE[task.category] ?? 'bg-[#2A2A2A] text-[#98989F]';
+  const catCls = CATEGORY_BADGE[task.category] ?? 'bg-gray-100 text-gray-500';
 
   return (
     <div
@@ -75,12 +76,12 @@ function TaskPill({ task }: { task: Task }) {
       className="rounded-md p-2 mb-2 border-l-2 cursor-pointer hover:opacity-80 transition-opacity"
       style={{ background: ps.bg, borderLeftColor: ps.border, opacity: task.status === 'done' ? 0.4 : 1 }}
     >
-      <p className="text-xs font-medium text-[#F5F5F7] leading-snug line-clamp-2" style={{ textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>{task.title}</p>
+      <p className="text-xs font-medium leading-snug line-clamp-2" style={{ color: task.status === 'done' ? '#9CA3AF' : '#111827', textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>{task.title}</p>
       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
         <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${catCls}`}>
           {CATEGORY_LABELS[task.category]}
         </span>
-        <span className="text-[10px] text-[#98989F]">{formatMinutes(task.duration_minutes)}</span>
+        <span className="text-[10px]" style={{ color: '#9CA3AF' }}>{formatMinutes(task.duration_minutes)}</span>
       </div>
     </div>
   );
@@ -92,9 +93,9 @@ function UberPill({ time }: { time: string }) {
   return (
     <div
       className="rounded-md p-2 border-l-2 mt-auto"
-      style={{ background: '#3A1A0A', borderLeftColor: '#D85A30' }}
+      style={{ background: '#FFF7ED', borderLeftColor: '#F97316' }}
     >
-      <p className="text-xs font-medium text-[#FB923C]">Uber Eats · {formatTime(time)}</p>
+      <p className="text-xs font-medium" style={{ color: '#EA580C' }}>Recurring · {formatTime(time)}</p>
     </div>
   );
 }
@@ -104,20 +105,20 @@ function UberPill({ time }: { time: string }) {
 function HoursBar({ tasks, dayRule }: { tasks: Task[]; dayRule: DayRule | undefined }) {
   if (!dayRule) return null;
   const logged = tasks.reduce((s, t) => s + t.time_logged_minutes, 0);
-  const maxMinutes = dayRule.max_focus_hours * 60;
+  const maxMinutes = Number(dayRule.max_focus_hours) * 60;
   const pct = maxMinutes > 0 ? Math.min(100, Math.round((logged / maxMinutes) * 100)) : 0;
   const isWarn = pct >= 75;
 
   return (
     <div className="mt-auto pt-2">
-      <div className="flex justify-between text-[10px] text-[#98989F] mb-1">
+      <div className="flex justify-between text-[10px] mb-1" style={{ color: '#9CA3AF' }}>
         <span>{formatMinutes(logged)}</span>
-        <span>{dayRule.max_focus_hours}h</span>
+        <span>{Number(dayRule.max_focus_hours)}h</span>
       </div>
-      <div className="h-1 rounded-full bg-[#48484A] overflow-hidden">
+      <div className="h-1 rounded-full bg-gray-100 overflow-hidden">
         <div
           className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, background: isWarn ? '#EF9F27' : '#60A5FA' }}
+          style={{ width: `${pct}%`, background: isWarn ? '#F59E0B' : '#EF4444' }}
         />
       </div>
     </div>
@@ -141,8 +142,8 @@ function DayColumn({
   const dateNum = parseInt(dateStr.split('-')[2], 10);
 
   const focusBadgeCls = dayRule
-    ? (FOCUS_BADGE[dayRule.focus_area] ?? 'bg-[#2A2A2A] text-[#98989F]')
-    : 'bg-[#2A2A2A] text-[#98989F]';
+    ? (FOCUS_BADGE[dayRule.focus_area] ?? 'bg-gray-100 text-gray-500')
+    : 'bg-gray-100 text-gray-500';
   const focusLabel = dayRule ? (FOCUS_LABELS[dayRule.focus_area] ?? dayRule.focus_area) : '—';
 
   const uberTask = recurringTasks.find(
@@ -163,18 +164,21 @@ function DayColumn({
 
   return (
     <div
-      className="flex flex-col rounded-xl p-3 min-h-[300px] min-w-[160px] flex-1"
+      className="flex flex-col rounded-xl p-3 min-h-[300px] snap-start"
       style={{
-        background: '#2C2C2E',
-        border: isToday ? '2px solid #60A5FA' : '2px solid transparent',
+        minWidth: 'min(160px, 80vw)',
+        flex: '1 0 auto',
+        background: '#FFFFFF',
+        border: isToday ? '2px solid #EF4444' : '1.5px solid #E5E7EB',
+        boxShadow: isToday ? '0 0 0 3px #FEF2F2' : 'none',
       }}
     >
       {/* Header */}
       <div className="mb-2">
-        <p className="text-[10px] uppercase tracking-widest text-[#98989F] font-medium mb-0.5">
+        <p className="text-[10px] uppercase tracking-widest font-medium mb-0.5" style={{ color: '#9CA3AF' }}>
           {DAY_SHORT[dayIndex]}
         </p>
-        <p className="text-2xl font-medium" style={{ color: isToday ? '#60A5FA' : '#F5F5F7' }}>
+        <p className="text-2xl font-medium" style={{ color: isToday ? '#EF4444' : '#111827' }}>
           {dateNum}
         </p>
         {dayRule && (
@@ -210,7 +214,7 @@ export default function WeekView() {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="flex gap-3 p-4 overflow-x-auto min-h-full">
+    <div className="flex gap-3 p-4 overflow-x-auto min-h-full snap-x snap-mandatory sm:snap-none scrollbar-none">
       {weekDates.map((dateStr, i) => {
         const dow = dateToDbDow(dateStr); // 0=Sun
         const dayRule = dayRules.find(r => r.day_of_week === dow);

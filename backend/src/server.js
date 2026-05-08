@@ -22,7 +22,8 @@ const taskRoutes        = require('./routes/tasks');
 const habitRoutes       = require('./routes/habits');
 const dayRuleRoutes     = require('./routes/day-rules');
 const recurringRoutes   = require('./routes/recurring');
-const groqUpdateRoutes   = require('./routes/groq-update');
+const groqUpdateRoutes  = require('./routes/groq-update');
+const settingsRoutes    = require('./routes/settings');
 const { authenticate: requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -74,6 +75,7 @@ app.use('/api/habits',         habitRoutes);
 app.use('/api/day-rules',      dayRuleRoutes);
 app.use('/api/recurring',      recurringRoutes);
 app.use('/api/groq-update',    requireAuth, groqUpdateRoutes);
+app.use('/api/settings',       settingsRoutes);
 
 // CalDAV sync status endpoint (polled by frontend)
 app.get('/api/caldav-status', requireAuth, async (req, res) => {

@@ -2,39 +2,80 @@
  * CalDAV sync library — fire-and-forget iCloud integration.
  * Uses raw HTTP (axios) to avoid ESM incompatibilities with tsdav.
  * All calls write to caldav_sync_log. Failures are logged, never thrown to callers.
+ *
+ * Credential resolution order:
+ *   1. user_settings table (per-user DB credentials)
+ *   2. Environment variables (shared fallback)
  */
 
 const axios = require('axios');
 const { query } = require('../config/db');
 
-const CALDAV_URL       = process.env.CALDAV_URL || 'https://caldav.icloud.com';
-const CALDAV_USERNAME  = process.env.CALDAV_USERNAME || '';
-const CALDAV_PASSWORD  = process.env.CALDAV_PASSWORD || '';
-const CALDAV_CAL_PATH  = process.env.CALDAV_CALENDAR_PATH || '';
+// ─── Env-var fallbacks ────────────────────────────────────────────────────────
 
-const isConfigured = () => !!(CALDAV_URL && CALDAV_USERNAME && CALDAV_PASSWORD && CALDAV_CAL_PATH);
+const ENV_URL      = process.env.CALDAV_URL || 'https://caldav.icloud.com';
+const ENV_USERNAME = process.env.CALDAV_USERNAME || '';
+const ENV_PASSWORD = process.env.CALDAV_PASSWORD || '';
+const ENV_CAL_PATH = process.env.CALDAV_CALENDAR_PATH || '';
 
-const caldavHeaders = () => ({
-  'Content-Type': 'text/calendar; charset=utf-8',
-  'Authorization': 'Basic ' + Buffer.from(`${CALDAV_USERNAME}:${CALDAV_PASSWORD}`).toString('base64'),
-});
+// ─── Per-user credential lookup ───────────────────────────────────────────────
+
+async function getUserCalDAVSettings(userId) {
+  if (!userId) return null;
+  try {
+    const result = await query(
+      'SELECT caldav_url, caldav_username, caldav_password, caldav_calendar_path FROM user_settings WHERE user_id = $1',
+      [userId]
+    );
+    const s = result.rows[0];
+    if (s && s.caldav_username && s.caldav_password && s.caldav_calendar_path) {
+      return {
+        url:     s.caldav_url || ENV_URL,
+        username: s.caldav_username,
+        password: s.caldav_password,
+        calPath:  s.caldav_calendar_path,
+      };
+    }
+  } catch (e) {
+    // Table might not exist yet on first boot — fall through to env vars
+  }
+  return null;
+}
+
+async function resolveSettings(userId) {
+  const db = await getUserCalDAVSettings(userId);
+  if (db) return db;
+  // Fall back to env vars
+  if (ENV_USERNAME && ENV_PASSWORD && ENV_CAL_PATH) {
+    return { url: ENV_URL, username: ENV_USERNAME, password: ENV_PASSWORD, calPath: ENV_CAL_PATH };
+  }
+  return null; // not configured
+}
+
+// Legacy sync check for isConfigured export (env-based only)
+const isConfigured = () => !!(ENV_URL && ENV_USERNAME && ENV_PASSWORD && ENV_CAL_PATH);
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function makeHeaders(settings) {
+  return {
+    'Content-Type': 'text/calendar; charset=utf-8',
+    Authorization:  'Basic ' + Buffer.from(`${settings.username}:${settings.password}`).toString('base64'),
+  };
+}
 
 const formatDate = (dateStr, timeStr) => {
-  // dateStr: 'YYYY-MM-DD', timeStr: 'HH:MM' or null
-  if (!timeStr) {
-    return `VALUE=DATE:${dateStr.replace(/-/g, '')}`;
-  }
+  if (!timeStr) return `VALUE=DATE:${dateStr.replace(/-/g, '')}`;
   const [h, m] = timeStr.split(':');
-  const dateBase = dateStr.replace(/-/g, '');
-  return `${dateBase}T${h}${m}00`;
+  return `${dateStr.replace(/-/g, '')}T${h}${m}00`;
 };
 
 const buildVEvent = (task) => {
-  const uid = task.cal_event_uid || `${task.id}@personal-os`;
-  const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  const summary = `${task.title} [P${task.priority}]`;
+  const uid         = task.cal_event_uid || `${task.id}@personal-os`;
+  const now         = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const summary     = `${task.title} [P${task.priority}]`;
   const description = (task.notes || '').slice(0, 500).replace(/\n/g, '\\n');
-  const category = task.category.toUpperCase();
+  const category    = task.category.toUpperCase();
 
   let dtstart;
   if (task.assigned_day) {
@@ -71,10 +112,9 @@ const withRetry = async (fn, maxAttempts = 3) => {
       return await fn();
     } catch (err) {
       if (attempt === maxAttempts) throw err;
-      // Handle 207 Multi-Status partial failure and other transient errors
       const status = err.response?.status;
-      if (status && status < 500 && status !== 207) throw err; // Non-retryable
-      await sleep(1000 * Math.pow(2, attempt - 1)); // 1s, 2s, 4s
+      if (status && status < 500 && status !== 207) throw err;
+      await sleep(1000 * Math.pow(2, attempt - 1));
     }
   }
 };
@@ -91,31 +131,32 @@ const logSync = async (userId, taskId, operation, eventUid, status, errorMessage
   }
 };
 
+// ─── Exported functions ───────────────────────────────────────────────────────
+
 const createCalEvent = async (task) => {
-  if (!isConfigured()) {
+  const settings = await resolveSettings(task.user_id);
+  if (!settings) {
     console.warn('CalDAV not configured — skipping createCalEvent');
     return null;
   }
 
-  const uid = `${task.id}@personal-os`;
-  const eventPath = `${CALDAV_CAL_PATH}${uid}.ics`;
-  const vevent = buildVEvent({ ...task, cal_event_uid: uid });
+  const uid       = `${task.id}@personal-os`;
+  const eventPath = `${settings.calPath}${uid}.ics`;
+  const vevent    = buildVEvent({ ...task, cal_event_uid: uid });
 
   try {
     await withRetry(async () => {
-      const response = await axios.put(`${CALDAV_URL}${eventPath}`, vevent, {
-        headers: caldavHeaders(),
+      const response = await axios.put(`${settings.url}${eventPath}`, vevent, {
+        headers: makeHeaders(settings),
         timeout: 10000,
       });
       if (response.status === 207) {
-        // Multi-status — check for errors
         const body = response.data || '';
         if (typeof body === 'string' && body.includes('error')) {
           throw new Error(`CalDAV 207 partial failure: ${body.slice(0, 200)}`);
         }
       }
     });
-
     await logSync(task.user_id, task.id, 'create', uid, 'success');
     return uid;
   } catch (err) {
@@ -127,23 +168,23 @@ const createCalEvent = async (task) => {
 };
 
 const updateCalEvent = async (task) => {
-  if (!isConfigured()) {
+  const settings = await resolveSettings(task.user_id);
+  if (!settings) {
     console.warn('CalDAV not configured — skipping updateCalEvent');
     return null;
   }
 
-  const uid = task.cal_event_uid || `${task.id}@personal-os`;
-  const eventPath = `${CALDAV_CAL_PATH}${uid}.ics`;
-  const vevent = buildVEvent(task);
+  const uid       = task.cal_event_uid || `${task.id}@personal-os`;
+  const eventPath = `${settings.calPath}${uid}.ics`;
+  const vevent    = buildVEvent(task);
 
   try {
     await withRetry(async () => {
-      await axios.put(`${CALDAV_URL}${eventPath}`, vevent, {
-        headers: caldavHeaders(),
+      await axios.put(`${settings.url}${eventPath}`, vevent, {
+        headers: makeHeaders(settings),
         timeout: 10000,
       });
     });
-
     await logSync(task.user_id, task.id, 'update', uid, 'success');
     return uid;
   } catch (err) {
@@ -155,23 +196,22 @@ const updateCalEvent = async (task) => {
 };
 
 const deleteCalEvent = async (userId, taskId, uid) => {
-  if (!isConfigured() || !uid) return;
+  const settings = await resolveSettings(userId);
+  if (!settings || !uid) return;
 
-  const eventPath = `${CALDAV_CAL_PATH}${uid}.ics`;
+  const eventPath = `${settings.calPath}${uid}.ics`;
 
   try {
     await withRetry(async () => {
-      await axios.delete(`${CALDAV_URL}${eventPath}`, {
+      await axios.delete(`${settings.url}${eventPath}`, {
         headers: {
-          'Authorization': 'Basic ' + Buffer.from(`${CALDAV_USERNAME}:${CALDAV_PASSWORD}`).toString('base64'),
+          Authorization: 'Basic ' + Buffer.from(`${settings.username}:${settings.password}`).toString('base64'),
         },
         timeout: 10000,
       });
     });
-
     await logSync(userId, taskId, 'delete', uid, 'success');
   } catch (err) {
-    // 404 means event not found — treat as success (idempotent)
     if (err.response?.status === 404) {
       await logSync(userId, taskId, 'delete', uid, 'success');
       return;

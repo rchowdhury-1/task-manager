@@ -108,6 +108,11 @@ const initDB = async () => {
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
     await client.query(migrationSQL);
 
+    // Per-user settings migration
+    const migration2Path = path.join(__dirname, '../db/migrations/002_caldav_settings.sql');
+    const migration2SQL = fs.readFileSync(migration2Path, 'utf8');
+    await client.query(migration2SQL);
+
     console.log('Database initialized successfully');
   } finally {
     client.release();

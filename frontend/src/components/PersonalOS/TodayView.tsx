@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import api from '../../api/axios';
-import toast from 'react-hot-toast';
 import { usePersonalOS } from '../../contexts/PersonalOSContext';
 import { Task, CATEGORY_LABELS } from '../../types/personalOS';
 import HabitsTracker from './HabitsTracker';
+import TaskModal from './TaskModal';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -12,7 +11,7 @@ function getToday(): string {
 }
 
 function getTodayDow(): number {
-  return new Date().getDay(); // 0=Sun
+  return new Date().getDay();
 }
 
 function getGreeting(): string {
@@ -30,18 +29,18 @@ function formatDate(dateStr: string): string {
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
 const PRIORITY_STYLES: Record<number, { border: string; bg: string }> = {
-  1: { border: '#E24B4A', bg: '#2D1F1F' },
-  2: { border: '#EF9F27', bg: '#2D2419' },
-  3: { border: '#639922', bg: '#1E2A14' },
+  1: { border: '#EF4444', bg: '#FEF2F2' },
+  2: { border: '#F59E0B', bg: '#FFFBEB' },
+  3: { border: '#10B981', bg: '#ECFDF5' },
 };
 
 const CATEGORY_BADGE: Record<string, string> = {
-  career:   'bg-[#1A2F4A] text-[#60A5FA]',
-  lms:      'bg-[#1A3A1A] text-[#4ADE80]',
-  freelance:'bg-[#3A2A0A] text-[#FCD34D]',
-  learning: 'bg-[#2A1A3A] text-[#C084FC]',
-  uber:     'bg-[#3A1A0A] text-[#FB923C]',
-  faith:    'bg-[#2A1A2A] text-[#F472B6]',
+  career:   'bg-blue-50 text-blue-600',
+  lms:      'bg-green-50 text-green-600',
+  freelance:'bg-yellow-50 text-yellow-700',
+  learning: 'bg-purple-50 text-purple-600',
+  uber:     'bg-orange-50 text-orange-600',
+  faith:    'bg-pink-50 text-pink-600',
 };
 
 // ─── TaskRow ─────────────────────────────────────────────────────────────────
@@ -49,24 +48,32 @@ const CATEGORY_BADGE: Record<string, string> = {
 function TaskRow({ task }: { task: Task }) {
   const { setActiveTask } = usePersonalOS();
   const ps = PRIORITY_STYLES[task.priority] ?? PRIORITY_STYLES[3];
-  const catCls = CATEGORY_BADGE[task.category] ?? 'bg-[#2A2A2A] text-[#98989F]';
+  const catCls = CATEGORY_BADGE[task.category] ?? 'bg-gray-50 text-gray-500';
 
   return (
     <div
       onClick={() => setActiveTask(task.id)}
-      className="flex items-center gap-3 p-3 rounded-xl border-l-2 cursor-pointer hover:opacity-80 transition-opacity mb-2"
+      className="flex items-center gap-3 p-3 rounded-xl border-l-2 border border-gray-100 cursor-pointer hover:shadow-sm transition-all mb-2 shadow-xs"
       style={{ background: ps.bg, borderLeftColor: ps.border }}
     >
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#F5F5F7] truncate">{task.title}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium truncate" style={{ color: '#111827' }}>{task.title}</p>
+          {task.priority === 1 && (
+            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0"
+              style={{ background: '#EF4444', color: '#fff' }}>
+              URGENT
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2 mt-1">
           <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${catCls}`}>
             {CATEGORY_LABELS[task.category]}
           </span>
           {task.scheduled_time && (
-            <span className="text-[10px] text-[#98989F]">{task.scheduled_time.slice(0, 5)}</span>
+            <span className="text-[10px]" style={{ color: '#6B7280' }}>{task.scheduled_time.slice(0, 5)}</span>
           )}
-          <span className="text-[10px] text-[#98989F]">{task.duration_minutes}m</span>
+          <span className="text-[10px]" style={{ color: '#9CA3AF' }}>{task.duration_minutes}m</span>
         </div>
       </div>
     </div>
@@ -76,13 +83,10 @@ function TaskRow({ task }: { task: Task }) {
 // ─── TodayView ────────────────────────────────────────────────────────────────
 
 export default function TodayView() {
-  const { tasks, recurringTasks, habits, refetch, toggleHabit } = usePersonalOS();
+  const { tasks, recurringTasks, habits, toggleHabit } = usePersonalOS();
   const today = getToday();
   const todayDow = getTodayDow();
-
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<Task['category']>('career');
-  const [addingTask, setAddingTask] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const todayTasks = tasks
     .filter(t => t.assigned_day === today && t.status !== 'done')
@@ -99,100 +103,61 @@ export default function TodayView() {
 
   const activeHabits = habits.filter(h => h.active);
 
-  const handleAddTask = async () => {
-    if (!title.trim()) return;
-    try {
-      await api.post('/tasks', {
-        title: title.trim(),
-        category,
-        assigned_day: today,
-        status: 'in_progress',
-        priority: 2,
-        duration_minutes: 60,
-      });
-      await refetch();
-      setTitle('');
-      setAddingTask(false);
-    } catch {
-      toast.error('Failed to add task', {
-        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
-      });
-    }
-  };
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Greeting */}
       <div className="mb-6">
-        <p className="text-2xl font-semibold text-[#F5F5F7]">{getGreeting()}</p>
-        <p className="text-sm text-[#98989F] mt-0.5">{formatDate(today)}</p>
+        <p className="text-2xl font-bold" style={{ color: '#111827' }}>{getGreeting()}</p>
+        <p className="text-sm mt-0.5" style={{ color: '#6B7280' }}>{formatDate(today)}</p>
       </div>
 
-      {/* Quick-add bar */}
-      <div className="mb-6 bg-[#2C2C2E] rounded-xl border border-[#48484A] p-3">
-        <div className="flex items-center gap-2">
-          <input
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            onFocus={() => setAddingTask(true)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') handleAddTask();
-              if (e.key === 'Escape') { setTitle(''); setAddingTask(false); }
-            }}
-            placeholder="Add a task for today…"
-            className="flex-1 bg-transparent text-sm text-[#F5F5F7] placeholder-[#98989F] outline-none"
-          />
-          {addingTask && (
-            <>
-              <select
-                value={category}
-                onChange={e => setCategory(e.target.value as Task['category'])}
-                className="text-xs bg-[#3A3A3C] border border-[#48484A] rounded-lg px-2 py-1.5 text-[#F5F5F7] outline-none"
-              >
-                {(['career','lms','freelance','learning','uber','faith'] as Task['category'][]).map(c => (
-                  <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
-                ))}
-              </select>
-              <button
-                onClick={handleAddTask}
-                className="text-xs px-3 py-1.5 rounded-lg bg-[#C084FC] text-black font-medium"
-              >
-                Add
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      {/* Add task for today */}
+      <button
+        onClick={() => setModalOpen(true)}
+        className="mb-6 w-full flex items-center gap-3 rounded-xl border-2 border-dashed px-4 py-3 text-sm font-medium transition-colors"
+        style={{ borderColor: '#E5E7EB', color: '#9CA3AF' }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = '#EF4444';
+          (e.currentTarget as HTMLButtonElement).style.color = '#EF4444';
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB';
+          (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF';
+        }}
+      >
+        <span className="text-lg leading-none">+</span>
+        Add a task for today
+      </button>
 
       {/* Today's tasks */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-sm font-semibold text-[#F5F5F7]">Today's tasks</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-[#3A3A3C] text-[#98989F]">
+          <h2 className="text-sm font-semibold" style={{ color: '#111827' }}>Today's tasks</h2>
+          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#F3F4F6', color: '#6B7280' }}>
             {todayTasks.length}
           </span>
         </div>
         {todayTasks.length === 0 ? (
-          <p className="text-sm text-[#98989F] py-4 text-center">Nothing scheduled for today — add a task above</p>
+          <p className="text-sm py-4 text-center" style={{ color: '#9CA3AF' }}>Nothing scheduled for today — add a task above</p>
         ) : (
           todayTasks.map(task => <TaskRow key={task.id} task={task} />)
         )}
       </div>
 
-      {/* Recurring / Uber */}
+      {/* Recurring */}
       {activeUberTasks.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-[#98989F] uppercase tracking-widest text-xs mb-3">Recurring</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9CA3AF' }}>Recurring</h2>
           {activeUberTasks.map(r => (
             <div
               key={r.id}
-              className="flex items-center gap-3 p-3 rounded-xl border-l-2 mb-2"
-              style={{ background: '#3A1A0A', borderLeftColor: '#D85A30' }}
+              className="flex items-center gap-3 p-3 rounded-xl border-l-2 border border-orange-100 mb-2"
+              style={{ background: '#FFF7ED', borderLeftColor: '#F97316' }}
             >
               <div>
-                <p className="text-sm font-medium text-[#FB923C]">{r.title}</p>
-                <p className="text-[10px] text-[#98989F] mt-0.5">
-                  {r.scheduled_time ? r.scheduled_time.slice(0, 5) : '9–11pm'} · every night
+                <p className="text-sm font-medium" style={{ color: '#EA580C' }}>{r.title}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: '#9CA3AF' }}>
+                  {r.scheduled_time ? r.scheduled_time.slice(0, 5) : '9–11pm'} · recurring
                 </p>
               </div>
             </div>
@@ -200,12 +165,12 @@ export default function TodayView() {
         </div>
       )}
 
-      {/* Habits — today only */}
+      {/* Habits today */}
       <div className="mb-6">
-        <h2 className="text-sm font-semibold text-[#98989F] uppercase tracking-widest text-xs mb-3">Habits today</h2>
-        <div className="bg-[#2C2C2E] rounded-xl border border-[#48484A] p-3 space-y-2">
+        <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9CA3AF' }}>Habits today</h2>
+        <div className="rounded-xl border p-3 space-y-2" style={{ background: '#FFFFFF', borderColor: '#E5E7EB' }}>
           {activeHabits.length === 0 && (
-            <p className="text-sm text-[#98989F] text-center py-2">No habits configured</p>
+            <p className="text-sm text-center py-2" style={{ color: '#9CA3AF' }}>No habits configured</p>
           )}
           {activeHabits.sort((a, b) => a.sort_order - b.sort_order).map(habit => {
             const done = habit.completions.includes(today);
@@ -213,10 +178,10 @@ export default function TodayView() {
               <div key={habit.id} className="flex items-center gap-3">
                 <button
                   onClick={() => toggleHabit(habit.id, today)}
-                  className="w-5 h-5 rounded border flex items-center justify-center text-[10px] font-bold transition-all shrink-0"
+                  className="w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all shrink-0"
                   style={{
-                    background: done ? '#1D9E75' : 'transparent',
-                    borderColor: done ? '#1D9E75' : '#48484A',
+                    background: done ? '#10B981' : 'transparent',
+                    borderColor: done ? '#10B981' : '#D1D5DB',
                     color: '#fff',
                   }}
                 >
@@ -225,26 +190,34 @@ export default function TodayView() {
                 <span
                   className="text-sm flex-1"
                   style={{
-                    color: done ? '#98989F' : '#F5F5F7',
+                    color: done ? '#9CA3AF' : '#111827',
                     textDecoration: done ? 'line-through' : 'none',
                   }}
                 >
                   {habit.name}
                 </span>
-                <span className="text-[10px] text-[#98989F] capitalize">{habit.time_of_day}</span>
+                <span className="text-[10px] capitalize" style={{ color: '#9CA3AF' }}>{habit.time_of_day}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Full habits grid */}
+      {/* Week grid */}
       <div className="mb-6">
-        <h2 className="text-sm font-semibold text-[#98989F] uppercase tracking-widest text-xs mb-3">Week grid</h2>
-        <div className="bg-[#2C2C2E] rounded-xl border border-[#48484A] overflow-hidden">
+        <h2 className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#9CA3AF' }}>Week grid</h2>
+        <div className="rounded-xl border overflow-hidden" style={{ background: '#FFFFFF', borderColor: '#E5E7EB' }}>
           <HabitsTracker />
         </div>
       </div>
+
+      {/* Task modal */}
+      <TaskModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        defaultDay={today}
+        defaultStatus="in_progress"
+      />
     </div>
   );
 }

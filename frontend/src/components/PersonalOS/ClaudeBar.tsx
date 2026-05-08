@@ -25,14 +25,14 @@ export default function ClaudeBar() {
       await refetch();
       toast.success(summary || 'Done!', {
         duration: 4000,
-        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #48484A' },
-        iconTheme: { primary: '#4ADE80', secondary: '#1C1C1E' },
+        style: { background: '#fff', color: '#111827', border: '1px solid #E5E7EB' },
+        iconTheme: { primary: '#10B981', secondary: '#fff' },
       });
       if (skipped && skipped.length > 0) {
         toast(`${skipped.length} operation${skipped.length > 1 ? 's' : ''} couldn't be applied`, {
           icon: '⚠️',
           duration: 5000,
-          style: { background: '#2C2C2E', color: '#EF9F27', border: '1px solid #EF9F27' },
+          style: { background: '#fff', color: '#D97706', border: '1px solid #FDE68A' },
         });
       }
       if (newWarnings && newWarnings.length > 0) {
@@ -45,7 +45,7 @@ export default function ClaudeBar() {
       const axiosErr = err as { response?: { data?: { error?: string } } };
       toast.error(axiosErr.response?.data?.error || 'Something went wrong', {
         duration: 5000,
-        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+        style: { background: '#fff', color: '#DC2626', border: '1px solid #FECACA' },
       });
     } finally {
       setLoading(false);
@@ -61,7 +61,6 @@ export default function ClaudeBar() {
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
-    // Auto-expand up to 3 rows
     const el = e.target;
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, 80)}px`;
@@ -73,29 +72,25 @@ export default function ClaudeBar() {
       {warnings.length > 0 && (
         <div className="fixed bottom-16 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
           <div
-            className="w-full max-w-2xl rounded-xl border px-4 py-3 shadow-xl pointer-events-auto"
-            style={{ background: 'rgba(239,159,39,0.1)', borderColor: '#EF9F27' }}
+            className="w-full max-w-2xl rounded-xl border px-4 py-3 shadow-lg pointer-events-auto"
+            style={{ background: '#FFFBEB', borderColor: '#FDE68A' }}
           >
-            <p className="text-sm font-medium mb-1" style={{ color: '#EF9F27' }}>
-              Schedule conflict
-            </p>
+            <p className="text-sm font-medium mb-1" style={{ color: '#D97706' }}>Schedule conflict</p>
             {warnings.map((w, i) => (
-              <p key={i} className="text-xs text-[#98989F] mb-0.5">{w}</p>
+              <p key={i} className="text-xs mb-0.5" style={{ color: '#6B7280' }}>{w}</p>
             ))}
             <div className="flex gap-2 mt-3">
               <button
                 onClick={() => { setWarnings([]); setPendingMessage(''); }}
-                className="text-xs px-3 py-1 rounded-lg border border-[#48484A] text-[#98989F] hover:text-[#F5F5F7] transition-colors"
+                className="text-xs px-3 py-1 rounded-lg border transition-colors"
+                style={{ borderColor: '#E5E7EB', color: '#6B7280' }}
               >
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  setWarnings([]);
-                  submit(pendingMessage + ' [override confirmed]');
-                }}
+                onClick={() => { setWarnings([]); submit(pendingMessage + ' [override confirmed]'); }}
                 className="text-xs px-3 py-1 rounded-lg font-medium"
-                style={{ background: '#EF9F27', color: '#000' }}
+                style={{ background: '#F59E0B', color: '#fff' }}
               >
                 Override & proceed
               </button>
@@ -106,11 +101,11 @@ export default function ClaudeBar() {
 
       {/* Bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t border-[#48484A] px-4 flex items-center gap-3"
-        style={{ background: '#2C2C2E' }}
+        className="fixed bottom-0 left-0 right-0 z-40 h-16 border-t px-4 flex items-center gap-3"
+        style={{ background: '#FFFFFF', borderColor: '#F3F4F6' }}
       >
         {/* Sparkle icon */}
-        <span className="text-[#C084FC] text-lg shrink-0 select-none">✦</span>
+        <span className="text-lg shrink-0 select-none" style={{ color: '#EF4444' }}>✦</span>
 
         {/* Textarea */}
         <div className="flex-1">
@@ -119,11 +114,20 @@ export default function ClaudeBar() {
             value={message}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder="Tell Claude what happened or what to schedule…"
+            placeholder="Tell the AI what happened or what to schedule…"
             rows={1}
             disabled={loading}
-            className="w-full resize-none rounded-xl px-4 py-2.5 text-sm border border-[#48484A] bg-[#3A3A3C] text-[#F5F5F7] placeholder-[#98989F] focus:outline-none focus:border-[#C084FC] transition-colors"
-            style={{ maxHeight: '80px', lineHeight: '1.5' }}
+            className="w-full resize-none rounded-xl px-4 py-2.5 text-sm border transition-colors"
+            style={{
+              maxHeight: '80px',
+              lineHeight: '1.5',
+              background: '#F9FAFB',
+              borderColor: '#E5E7EB',
+              color: '#111827',
+              outline: 'none',
+            }}
+            onFocus={e => { e.target.style.borderColor = '#EF4444'; }}
+            onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
           />
         </div>
 
@@ -131,14 +135,14 @@ export default function ClaudeBar() {
         <button
           onClick={() => submit(message)}
           disabled={loading || !message.trim()}
-          className="shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+          className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
           style={{
-            background: loading || !message.trim() ? 'rgba(192,132,252,0.3)' : '#C084FC',
-            color: loading || !message.trim() ? '#98989F' : '#000',
+            background: loading || !message.trim() ? '#F3F4F6' : '#EF4444',
+            color: loading || !message.trim() ? '#9CA3AF' : '#fff',
           }}
         >
           {loading ? (
-            <span className="w-4 h-4 border-2 border-[#98989F] border-t-transparent rounded-full animate-spin" />
+            <span className="w-4 h-4 border-2 border-gray-300 border-t-red-400 rounded-full animate-spin" />
           ) : (
             'Update ↗'
           )}

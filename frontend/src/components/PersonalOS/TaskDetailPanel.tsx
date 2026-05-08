@@ -9,18 +9,18 @@ import { Task, TaskActivity, CATEGORY_LABELS } from '../../types/personalOS';
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
 const PRIORITY_STYLES: Record<number, { label: string; color: string; bg: string }> = {
-  1: { label: 'P1', color: '#FF6B6B', bg: '#2D1F1F' },
-  2: { label: 'P2', color: '#FFC068', bg: '#2D2419' },
-  3: { label: 'P3', color: '#8DC642', bg: '#1E2A14' },
+  1: { label: 'P1', color: '#EF4444', bg: '#FEF2F2' },
+  2: { label: 'P2', color: '#F59E0B', bg: '#FFFBEB' },
+  3: { label: 'P3', color: '#10B981', bg: '#ECFDF5' },
 };
 
 const CATEGORY_BADGE: Record<string, string> = {
-  career:   'bg-[#1A2F4A] text-[#60A5FA]',
-  lms:      'bg-[#1A3A1A] text-[#4ADE80]',
-  freelance:'bg-[#3A2A0A] text-[#FCD34D]',
-  learning: 'bg-[#2A1A3A] text-[#C084FC]',
-  uber:     'bg-[#3A1A0A] text-[#FB923C]',
-  faith:    'bg-[#2A1A2A] text-[#F472B6]',
+  career:   'bg-blue-50 text-blue-600',
+  lms:      'bg-green-50 text-green-600',
+  freelance:'bg-yellow-50 text-yellow-700',
+  learning: 'bg-purple-50 text-purple-600',
+  uber:     'bg-orange-50 text-orange-600',
+  faith:    'bg-pink-50 text-pink-600',
 };
 
 const STATUS_OPTIONS: { value: Task['status']; label: string }[] = [
@@ -31,13 +31,13 @@ const STATUS_OPTIONS: { value: Task['status']; label: string }[] = [
 ];
 
 const ACTION_COLOR: Record<string, string> = {
-  created:         '#4ADE80',
-  completed:       '#60A5FA',
-  groq_update:     '#C084FC',
-  moved:           '#FCD34D',
-  status_change:   '#FCD34D',
-  note_added:      '#98989F',
-  next_step_added: '#98989F',
+  created:         '#10B981',
+  completed:       '#3B82F6',
+  groq_update:     '#8B5CF6',
+  moved:           '#F59E0B',
+  status_change:   '#F59E0B',
+  note_added:      '#9CA3AF',
+  next_step_added: '#9CA3AF',
 };
 
 function formatMinutes(minutes: number): string {
@@ -66,7 +66,7 @@ function Skeleton() {
   return (
     <div className="p-6 space-y-4">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="rounded-lg bg-[#3A3A3C] animate-pulse" style={{ height: i === 0 ? 32 : 56 }} />
+        <div key={i} className="rounded-lg bg-gray-100 animate-pulse" style={{ height: i === 0 ? 32 : 56 }} />
       ))}
     </div>
   );
@@ -76,7 +76,7 @@ function Skeleton() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[10px] uppercase tracking-widest text-[#98989F] font-semibold mb-2">
+    <p className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: '#9CA3AF' }}>
       {children}
     </p>
   );
@@ -139,7 +139,7 @@ export default function TaskDetailPanel() {
         setTask(originalTask); // revert local state on error
         setSaveState('idle');
         toast.error('Failed to save changes', {
-          style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+          style: { background: '#fff', color: '#DC2626', border: '1px solid #FECACA' },
         });
       }
     }, 800);
@@ -154,7 +154,7 @@ export default function TaskDetailPanel() {
       setActiveTask(null);
     } catch {
       toast.error('Failed to delete task', {
-        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+        style: { background: '#fff', color: '#DC2626', border: '1px solid #FECACA' },
       });
       setDeleting(false);
     }
@@ -166,14 +166,19 @@ export default function TaskDetailPanel() {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-40"
+        className="fixed inset-0 bg-black/30 z-40"
         onClick={() => setActiveTask(null)}
       />
 
-      {/* Panel */}
+      {/* Panel — full-screen on mobile, 440px slide-in on desktop */}
       <div
-        className="fixed right-0 top-0 h-full w-[440px] z-50 border-l border-[#48484A] overflow-y-auto"
-        style={{ background: '#2C2C2E', transform: visible ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 0.3s ease-out' }}
+        className="fixed right-0 top-0 h-full w-full sm:w-[440px] z-50 overflow-y-auto"
+        style={{
+          background: '#FFFFFF',
+          borderLeft: '1.5px solid #E5E7EB',
+          transform: visible ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.3s ease-out',
+        }}
         onClick={e => e.stopPropagation()}
       >
         {loadingTask || !task ? (
@@ -185,14 +190,14 @@ export default function TaskDetailPanel() {
               <div className="flex-1 pr-4">
                 {/* Category + save indicator */}
                 <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${CATEGORY_BADGE[task.category] ?? 'bg-[#2A2A2A] text-[#98989F]'}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${CATEGORY_BADGE[task.category] ?? 'bg-gray-100 text-gray-500'}`}>
                     {CATEGORY_LABELS[task.category]}
                   </span>
                   {saveState === 'saving' && (
-                    <span className="text-[10px] text-[#98989F]">saving…</span>
+                    <span className="text-[10px]" style={{ color: '#9CA3AF' }}>saving…</span>
                   )}
                   {saveState === 'saved' && (
-                    <span className="text-[10px] text-[#4ADE80]">✓ saved</span>
+                    <span className="text-[10px]" style={{ color: '#10B981' }}>✓ saved</span>
                   )}
                 </div>
 
@@ -200,14 +205,20 @@ export default function TaskDetailPanel() {
                 <input
                   value={task.title}
                   onChange={e => scheduleSave({ title: e.target.value })}
-                  className="w-full bg-transparent text-xl font-medium text-[#F5F5F7] outline-none border-b border-transparent focus:border-[#48484A] transition-colors pb-1"
+                  className="w-full bg-transparent text-xl font-medium outline-none border-b border-transparent transition-colors pb-1"
+                  style={{ color: '#111827', borderBottomColor: 'transparent' }}
+                  onFocus={e => { e.target.style.borderBottomColor = '#E5E7EB'; }}
+                  onBlur={e => { e.target.style.borderBottomColor = 'transparent'; }}
                 />
               </div>
 
               {/* Close */}
               <button
                 onClick={() => setActiveTask(null)}
-                className="w-8 h-8 rounded-lg bg-[#3A3A3C] hover:bg-[#48484A] transition-colors flex items-center justify-center text-[#98989F] hover:text-[#F5F5F7] shrink-0"
+                className="w-8 h-8 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                style={{ background: '#F3F4F6', color: '#6B7280' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#E5E7EB'; (e.currentTarget as HTMLButtonElement).style.color = '#111827'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F3F4F6'; (e.currentTarget as HTMLButtonElement).style.color = '#6B7280'; }}
               >
                 ✕
               </button>
@@ -227,8 +238,8 @@ export default function TaskDetailPanel() {
                       className="text-xs px-2.5 py-1 rounded-lg font-medium border transition-all"
                       style={{
                         background: active ? ps.bg : 'transparent',
-                        color: active ? ps.color : '#98989F',
-                        borderColor: active ? ps.color : '#48484A',
+                        color: active ? ps.color : '#9CA3AF',
+                        borderColor: active ? ps.color : '#E5E7EB',
                       }}
                     >
                       {ps.label}
@@ -241,7 +252,10 @@ export default function TaskDetailPanel() {
               <select
                 value={task.status}
                 onChange={e => scheduleSave({ status: e.target.value as Task['status'] })}
-                className="flex-1 bg-[#3A3A3C] border border-[#48484A] rounded-lg px-3 py-1.5 text-xs text-[#F5F5F7] outline-none focus:border-[#60A5FA] transition-colors"
+                className="flex-1 rounded-lg px-3 py-1.5 text-xs outline-none transition-colors"
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
+                onFocus={e => { e.target.style.borderColor = '#EF4444'; }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
               >
                 {STATUS_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -257,7 +271,10 @@ export default function TaskDetailPanel() {
                 onChange={e => scheduleSave({ last_left_off: e.target.value })}
                 rows={2}
                 placeholder="What were you doing when you last worked on this?"
-                className="w-full bg-[#3A3A3C] border border-[#48484A] rounded-lg p-3 text-sm text-[#F5F5F7] placeholder-[#98989F] outline-none focus:border-[#60A5FA] transition-colors resize-none"
+                className="w-full rounded-lg p-3 text-sm outline-none transition-colors resize-none"
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
+                onFocus={e => { e.target.style.borderColor = '#EF4444'; }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
               />
             </div>
 
@@ -265,7 +282,7 @@ export default function TaskDetailPanel() {
             <div className="mb-5">
               <div className="flex items-center gap-2 mb-2">
                 <SectionLabel>Next steps</SectionLabel>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#3A3A3C] text-[#98989F]">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: '#F3F4F6', color: '#9CA3AF' }}>
                   {task.next_steps.filter(s => !s.done).length} remaining
                 </span>
               </div>
@@ -286,14 +303,14 @@ export default function TaskDetailPanel() {
                           updateTask(task.id, { next_steps: newSteps });
                         } catch {
                           toast.error('Failed to update step', {
-                            style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+                            style: { background: '#fff', color: '#DC2626', border: '1px solid #FECACA' },
                           });
                         }
                       }}
-                      className="w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center text-[10px] font-bold transition-all"
+                      className="w-4 h-4 rounded border-2 shrink-0 mt-0.5 flex items-center justify-center text-[10px] font-bold transition-all"
                       style={{
-                        background: step.done ? '#1D9E75' : 'transparent',
-                        borderColor: step.done ? '#1D9E75' : '#48484A',
+                        background: step.done ? '#10B981' : 'transparent',
+                        borderColor: step.done ? '#10B981' : '#D1D5DB',
                         color: '#fff',
                       }}
                     >
@@ -302,7 +319,7 @@ export default function TaskDetailPanel() {
                     <span
                       className="text-sm flex-1"
                       style={{
-                        color: step.done ? '#98989F' : '#F5F5F7',
+                        color: step.done ? '#9CA3AF' : '#111827',
                         textDecoration: step.done ? 'line-through' : 'none',
                       }}
                     >
@@ -327,13 +344,16 @@ export default function TaskDetailPanel() {
                       setNewStep('');
                     } catch {
                       toast.error('Failed to add step', {
-                        style: { background: '#2C2C2E', color: '#F5F5F7', border: '1px solid #E24B4A' },
+                        style: { background: '#fff', color: '#DC2626', border: '1px solid #FECACA' },
                       });
                     }
                   }
                 }}
                 placeholder="Add a step… (Enter to save)"
-                className="w-full bg-[#3A3A3C] border border-[#48484A] rounded-lg px-3 py-2 text-sm text-[#F5F5F7] placeholder-[#98989F] outline-none focus:border-[#60A5FA] transition-colors"
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-colors"
+                style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
+                onFocus={e => { e.target.style.borderColor = '#EF4444'; }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
               />
             </div>
 
@@ -341,22 +361,22 @@ export default function TaskDetailPanel() {
             <div className="mb-5">
               <SectionLabel>Time tracking</SectionLabel>
               <div className="flex gap-4 mb-3">
-                <div className="flex-1 bg-[#3A3A3C] rounded-lg p-3 text-center">
-                  <p className="text-[10px] text-[#98989F] mb-1">Estimated</p>
-                  <p className="text-lg font-semibold text-[#F5F5F7]">
+                <div className="flex-1 rounded-lg p-3 text-center" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+                  <p className="text-[10px] mb-1" style={{ color: '#9CA3AF' }}>Estimated</p>
+                  <p className="text-lg font-semibold" style={{ color: '#111827' }}>
                     {formatMinutes(task.duration_minutes)}
                   </p>
                 </div>
-                <div className="flex-1 bg-[#3A3A3C] rounded-lg p-3 text-center">
-                  <p className="text-[10px] text-[#98989F] mb-1">Logged</p>
-                  <p className="text-lg font-semibold text-[#F5F5F7]">
+                <div className="flex-1 rounded-lg p-3 text-center" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+                  <p className="text-[10px] mb-1" style={{ color: '#9CA3AF' }}>Logged</p>
+                  <p className="text-lg font-semibold" style={{ color: '#111827' }}>
                     {formatMinutes(task.time_logged_minutes)}
                   </p>
                 </div>
               </div>
 
               {/* Progress bar */}
-              <div className="h-1 rounded-full bg-[#48484A] mb-3 overflow-hidden">
+              <div className="h-1 rounded-full mb-3 overflow-hidden" style={{ background: '#F3F4F6' }}>
                 {(() => {
                   const pct = task.duration_minutes > 0
                     ? Math.min(100, Math.round((task.time_logged_minutes / task.duration_minutes) * 100))
@@ -365,7 +385,7 @@ export default function TaskDetailPanel() {
                   return (
                     <div
                       className="h-full rounded-full transition-all"
-                      style={{ width: `${pct}%`, background: isWarn ? '#EF9F27' : '#60A5FA' }}
+                      style={{ width: `${pct}%`, background: isWarn ? '#F59E0B' : '#EF4444' }}
                     />
                   );
                 })()}
@@ -379,7 +399,10 @@ export default function TaskDetailPanel() {
                     onChange={e => setLogMinutes(e.target.value)}
                     placeholder="Minutes"
                     min={1}
-                    className="flex-1 bg-[#3A3A3C] border border-[#48484A] rounded-lg px-3 py-2 text-sm text-[#F5F5F7] outline-none focus:border-[#60A5FA]"
+                    className="flex-1 rounded-lg px-3 py-2 text-sm outline-none transition-colors"
+                    style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
+                    onFocus={e => { e.target.style.borderColor = '#EF4444'; }}
+                    onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
                   />
                   <button
                     onClick={async () => {
@@ -390,13 +413,15 @@ export default function TaskDetailPanel() {
                       setShowLogForm(false);
                       setLogMinutes('');
                     }}
-                    className="px-3 py-2 rounded-lg bg-[#C084FC] text-black text-sm font-medium"
+                    className="px-3 py-2 rounded-lg text-sm font-medium"
+                    style={{ background: '#EF4444', color: '#fff' }}
                   >
                     Log
                   </button>
                   <button
                     onClick={() => { setShowLogForm(false); setLogMinutes(''); }}
-                    className="text-sm text-[#98989F]"
+                    className="text-sm"
+                    style={{ color: '#9CA3AF' }}
                   >
                     Cancel
                   </button>
@@ -404,7 +429,10 @@ export default function TaskDetailPanel() {
               ) : (
                 <button
                   onClick={() => setShowLogForm(true)}
-                  className="text-sm text-[#98989F] hover:text-[#F5F5F7] border border-dashed border-[#48484A] hover:border-[#98989F] rounded-lg w-full py-2 transition-colors"
+                  className="text-sm border border-dashed rounded-lg w-full py-2 transition-colors"
+                  style={{ borderColor: '#E5E7EB', color: '#9CA3AF' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#EF4444'; (e.currentTarget as HTMLButtonElement).style.color = '#EF4444'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB'; (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF'; }}
                 >
                   + Log time
                 </button>
@@ -417,7 +445,10 @@ export default function TaskDetailPanel() {
                 <SectionLabel>Notes</SectionLabel>
                 <button
                   onClick={() => setNotesPreview(p => !p)}
-                  className="text-[10px] text-[#98989F] hover:text-[#F5F5F7] border border-[#48484A] rounded px-2 py-0.5 transition-colors"
+                  className="text-[10px] rounded px-2 py-0.5 transition-colors"
+                  style={{ color: '#9CA3AF', border: '1px solid #E5E7EB' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#111827'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#9CA3AF'; }}
                 >
                   {notesPreview ? 'Edit' : 'Preview'}
                 </button>
@@ -425,12 +456,13 @@ export default function TaskDetailPanel() {
               {notesPreview ? (
                 task.notes ? (
                   <div
-                    className="bg-[#3A3A3C] border border-[#48484A] rounded-lg p-3 text-sm text-[#F5F5F7] min-h-[80px] font-sans leading-relaxed prose prose-invert prose-sm max-w-none"
+                    className="rounded-lg p-3 text-sm min-h-[80px] font-sans leading-relaxed prose prose-sm max-w-none"
+                    style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
                     dangerouslySetInnerHTML={{ __html: marked.parse(task.notes) as string }}
                   />
                 ) : (
-                  <div className="bg-[#3A3A3C] border border-[#48484A] rounded-lg p-3 text-sm min-h-[80px] flex items-center">
-                    <span className="text-[#98989F] italic">No notes yet</span>
+                  <div className="rounded-lg p-3 text-sm min-h-[80px] flex items-center" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+                    <span className="italic" style={{ color: '#9CA3AF' }}>No notes yet</span>
                   </div>
                 )
               ) : (
@@ -439,7 +471,10 @@ export default function TaskDetailPanel() {
                   onChange={e => scheduleSave({ notes: e.target.value })}
                   rows={4}
                   placeholder="Notes, links, context…"
-                  className="w-full bg-[#3A3A3C] border border-[#48484A] rounded-lg p-3 text-sm text-[#F5F5F7] placeholder-[#98989F] outline-none focus:border-[#60A5FA] transition-colors resize-none"
+                  className="w-full rounded-lg p-3 text-sm outline-none transition-colors resize-none"
+                  style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
+                  onFocus={e => { e.target.style.borderColor = '#EF4444'; }}
+                  onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
                 />
               )}
             </div>
@@ -449,21 +484,27 @@ export default function TaskDetailPanel() {
               <SectionLabel>Schedule</SectionLabel>
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="text-[10px] text-[#98989F] block mb-1">Assigned day</label>
+                  <label className="text-[10px] block mb-1" style={{ color: '#9CA3AF' }}>Assigned day</label>
                   <input
                     type="date"
                     value={task.assigned_day ?? ''}
                     onChange={e => scheduleSave({ assigned_day: e.target.value || null })}
-                    className="w-full bg-[#3A3A3C] border border-[#48484A] rounded-lg px-3 py-2 text-sm text-[#F5F5F7] outline-none focus:border-[#60A5FA] transition-colors"
+                    className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-colors"
+                    style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
+                    onFocus={e => { e.target.style.borderColor = '#EF4444'; }}
+                    onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] text-[#98989F] block mb-1">Time</label>
+                  <label className="text-[10px] block mb-1" style={{ color: '#9CA3AF' }}>Time</label>
                   <input
                     type="time"
                     value={task.scheduled_time ?? ''}
                     onChange={e => scheduleSave({ scheduled_time: e.target.value || null })}
-                    className="w-full bg-[#3A3A3C] border border-[#48484A] rounded-lg px-3 py-2 text-sm text-[#F5F5F7] outline-none focus:border-[#60A5FA] transition-colors"
+                    className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-colors"
+                    style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#111827' }}
+                    onFocus={e => { e.target.style.borderColor = '#EF4444'; }}
+                    onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
                   />
                 </div>
               </div>
@@ -478,16 +519,16 @@ export default function TaskDetailPanel() {
                     <div key={entry.id} className="flex items-start gap-2.5">
                       <div
                         className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5"
-                        style={{ background: ACTION_COLOR[entry.action] ?? '#98989F' }}
+                        style={{ background: ACTION_COLOR[entry.action] ?? '#9CA3AF' }}
                       />
                       <div className="flex-1 min-w-0">
                         <p
                           className="text-xs font-medium"
-                          style={{ color: ACTION_COLOR[entry.action] ?? '#98989F' }}
+                          style={{ color: ACTION_COLOR[entry.action] ?? '#9CA3AF' }}
                         >
                           {actionLabel(entry.action, entry.payload)}
                         </p>
-                        <p className="text-[10px] text-[#98989F]">
+                        <p className="text-[10px]" style={{ color: '#9CA3AF' }}>
                           {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
                         </p>
                       </div>
@@ -498,17 +539,17 @@ export default function TaskDetailPanel() {
             )}
 
             {/* ── DELETE ── */}
-            <div className="pt-4 border-t border-[#48484A]">
+            <div className="pt-4" style={{ borderTop: '1px solid #F3F4F6' }}>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
                 className="w-full text-sm py-2 rounded-lg border transition-colors"
                 style={{
-                  color: deleting ? '#98989F' : '#E24B4A',
-                  borderColor: deleting ? '#48484A' : 'rgba(226,75,74,0.3)',
+                  color: deleting ? '#9CA3AF' : '#EF4444',
+                  borderColor: deleting ? '#E5E7EB' : '#FECACA',
                   background: 'transparent',
                 }}
-                onMouseEnter={e => { if (!deleting) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(226,75,74,0.08)'; }}
+                onMouseEnter={e => { if (!deleting) (e.currentTarget as HTMLButtonElement).style.background = '#FEF2F2'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
               >
                 {deleting ? 'Deleting…' : 'Delete task'}

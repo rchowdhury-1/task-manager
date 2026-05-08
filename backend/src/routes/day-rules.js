@@ -17,7 +17,8 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// PATCH /api/day-rules/:dayOfWeek — update focus area or max hours
+// PATCH /api/day-rules/:dayOfWeek — upsert focus area or max hours
+// Creates the row if it doesn't exist (handles users without seeded day rules)
 router.patch('/:dayOfWeek', async (req, res, next) => {
   try {
     const userId = req.user.userId;
@@ -35,13 +36,18 @@ router.patch('/:dayOfWeek', async (req, res, next) => {
 
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields' });
 
-    const setClauses = Object.keys(updates).map((k, i) => `${k} = $${i + 3}`).join(', ');
-    const result = await query(
-      `UPDATE day_rules SET ${setClauses} WHERE user_id=$1 AND day_of_week=$2 RETURNING *`,
-      [userId, dayOfWeek, ...Object.values(updates)]
-    );
+    const { focus_area, max_focus_hours, cal_color } = req.body;
 
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Day rule not found' });
+    const result = await query(
+      `INSERT INTO day_rules (user_id, day_of_week, focus_area, max_focus_hours, cal_color)
+       VALUES ($1, $2, COALESCE($3, 'general'), COALESCE($4, 8), COALESCE($5, 'blue'))
+       ON CONFLICT (user_id, day_of_week) DO UPDATE SET
+         focus_area      = CASE WHEN $3 IS NOT NULL THEN $3      ELSE day_rules.focus_area      END,
+         max_focus_hours = CASE WHEN $4 IS NOT NULL THEN $4      ELSE day_rules.max_focus_hours END,
+         cal_color       = CASE WHEN $5 IS NOT NULL THEN $5      ELSE day_rules.cal_color       END
+       RETURNING *`,
+      [userId, dayOfWeek, focus_area ?? null, max_focus_hours ?? null, cal_color ?? null]
+    );
 
     res.json(result.rows[0]);
   } catch (err) { next(err); }
