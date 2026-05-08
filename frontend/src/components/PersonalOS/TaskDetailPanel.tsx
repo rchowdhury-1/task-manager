@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { marked } from 'marked';
 import api from '../../api/axios';
 import { usePersonalOS } from '../../contexts/PersonalOSContext';
 import { Task, TaskActivity, CATEGORY_LABELS } from '../../types/personalOS';
@@ -392,11 +393,16 @@ export default function TaskDetailPanel() {
                 </button>
               </div>
               {notesPreview ? (
-                <div
-                  className="bg-[#3A3A3C] border border-[#48484A] rounded-lg p-3 text-sm text-[#F5F5F7] min-h-[80px] whitespace-pre-wrap font-sans leading-relaxed"
-                >
-                  {task.notes || <span className="text-[#98989F] italic">No notes yet</span>}
-                </div>
+                task.notes ? (
+                  <div
+                    className="bg-[#3A3A3C] border border-[#48484A] rounded-lg p-3 text-sm text-[#F5F5F7] min-h-[80px] font-sans leading-relaxed prose prose-invert prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: marked.parse(task.notes) as string }}
+                  />
+                ) : (
+                  <div className="bg-[#3A3A3C] border border-[#48484A] rounded-lg p-3 text-sm min-h-[80px] flex items-center">
+                    <span className="text-[#98989F] italic">No notes yet</span>
+                  </div>
+                )
               ) : (
                 <textarea
                   value={task.notes ?? ''}

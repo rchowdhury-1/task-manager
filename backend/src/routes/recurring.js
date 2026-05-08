@@ -1,7 +1,6 @@
 const express = require('express');
 const { query } = require('../config/db');
 const { authenticate } = require('../middleware/auth');
-const { deleteCalEvent } = require('../lib/caldav');
 
 const router = express.Router();
 router.use(authenticate);

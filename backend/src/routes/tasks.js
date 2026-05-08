@@ -24,7 +24,7 @@ router.get('/', async (req, res, next) => {
     if (status) { sql += ` AND t.status = $${idx++}`; params.push(status); }
     if (category) { sql += ` AND t.category = $${idx++}`; params.push(category); }
 
-    sql += ' ORDER BY t.created_at DESC';
+    sql += ' ORDER BY t.priority ASC, t.created_at DESC';
 
     const result = await query(sql, params);
     res.json(result.rows);
@@ -83,7 +83,7 @@ router.post('/', async (req, res, next) => {
 
     // Socket broadcast
     const io = req.app.get('io');
-    io?.to(`user:${userId}`).emit('task:updated', task);
+    io?.to(`user:${userId}`).emit('board:refresh', { triggeredBy: 'task_created' });
 
     // CalDAV fire-and-forget
     if (assigned_day) {

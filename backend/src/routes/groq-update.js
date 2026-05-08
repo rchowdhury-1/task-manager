@@ -36,8 +36,11 @@ ALLOWED OPERATIONS (you may only return these):
       "type": "update_task",
       "task_id": "<uuid>",
       "fields": {
+        "title": "string",
         "priority": 1,
         "assigned_day": "YYYY-MM-DD",
+        "scheduled_time": "HH:MM or null",
+        "duration_minutes": 60,
         "last_left_off": "string",
         "notes": "string",
         "time_logged_minutes": 0
@@ -128,12 +131,14 @@ const validateOp = (op) => {
     case 'update_task': {
       if (!UUID_RE.test(op.task_id)) return false;
       if (!op.fields || typeof op.fields !== 'object') return false;
-      const allowed = new Set(['priority', 'assigned_day', 'last_left_off', 'notes', 'time_logged_minutes']);
+      const allowed = new Set(['title', 'priority', 'assigned_day', 'scheduled_time', 'duration_minutes', 'last_left_off', 'notes', 'time_logged_minutes']);
       for (const k of Object.keys(op.fields)) {
         if (!allowed.has(k)) return false;
       }
       if (op.fields.priority !== undefined && ![1,2,3].includes(op.fields.priority)) return false;
       if (op.fields.assigned_day && !DATE_RE.test(op.fields.assigned_day)) return false;
+      if (op.fields.scheduled_time && !TIME_RE.test(op.fields.scheduled_time)) return false;
+      if (op.fields.duration_minutes !== undefined && (typeof op.fields.duration_minutes !== 'number' || op.fields.duration_minutes < 0)) return false;
       return true;
     }
 
@@ -197,13 +202,15 @@ const handlers = {
   },
 
   async update_task(op, userId, client) {
-    const allowed = ['priority', 'assigned_day', 'last_left_off', 'notes', 'time_logged_minutes'];
+    const allowed = ['title', 'priority', 'assigned_day', 'scheduled_time', 'duration_minutes', 'last_left_off', 'notes', 'time_logged_minutes'];
     const updates = {};
     for (const key of allowed) {
       if (op.fields[key] !== undefined) {
-        updates[key] = key === 'last_left_off' || key === 'notes'
+        updates[key] = (key === 'last_left_off' || key === 'notes')
           ? sanitize(op.fields[key], 5000)
-          : op.fields[key];
+          : key === 'title'
+            ? sanitize(op.fields[key], 255)
+            : op.fields[key];
       }
     }
     if (Object.keys(updates).length === 0) return null;

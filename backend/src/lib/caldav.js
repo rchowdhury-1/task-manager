@@ -12,7 +12,7 @@ const CALDAV_USERNAME  = process.env.CALDAV_USERNAME || '';
 const CALDAV_PASSWORD  = process.env.CALDAV_PASSWORD || '';
 const CALDAV_CAL_PATH  = process.env.CALDAV_CALENDAR_PATH || '';
 
-const isConfigured = () => !!(CALDAV_USERNAME && CALDAV_PASSWORD && CALDAV_CAL_PATH);
+const isConfigured = () => !!(CALDAV_URL && CALDAV_USERNAME && CALDAV_PASSWORD && CALDAV_CAL_PATH);
 
 const caldavHeaders = () => ({
   'Content-Type': 'text/calendar; charset=utf-8',
