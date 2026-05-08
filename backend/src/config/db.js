@@ -1,6 +1,12 @@
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 const fs = require('fs');
 const path = require('path');
+
+// Return DATE columns as plain 'YYYY-MM-DD' strings instead of JS Date objects.
+// Without this, pg converts DATE → JS Date → JSON serialises as ISO timestamp
+// with timezone offset (e.g. "2026-05-07T23:00:00.000Z" for BST users),
+// breaking all frontend date comparisons.
+types.setTypeParser(1082, (val) => val);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -101,6 +107,7 @@ const initDB = async () => {
     await client.query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color VARCHAR(7) DEFAULT '#10b981';
       ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+      ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
     `);
 
     // Personal OS migration

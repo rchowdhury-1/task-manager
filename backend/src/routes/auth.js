@@ -99,23 +99,30 @@ router.post('/login', [
 });
 
 // POST /api/auth/refresh
+// No token rotation — we just verify the existing refresh token and issue a
+// new access token. Rotation caused multi-device / multi-tab race conditions
+// where the second concurrent refresh would 401 because the first already
+// deleted the shared token.
 router.post('/refresh', async (req, res, next) => {
   try {
     const token = req.cookies.refreshToken;
     if (!token) return res.status(401).json({ error: 'No refresh token' });
 
-    const stored = await query('SELECT * FROM refresh_tokens WHERE token=$1', [token]);
+    const stored = await query(
+      'SELECT * FROM refresh_tokens WHERE token=$1 AND (expires_at IS NULL OR expires_at > NOW())',
+      [token]
+    );
     if (stored.rows.length === 0) return res.status(401).json({ error: 'Invalid refresh token' });
 
     const decoded = jwt.verify(token, process.env.REFRESH_SECRET);
-    const userResult = await query('SELECT id, name, email, avatar_color, created_at FROM users WHERE id=$1', [decoded.userId]);
+    const userResult = await query(
+      'SELECT id, name, email, avatar_color, created_at FROM users WHERE id=$1',
+      [decoded.userId]
+    );
     if (userResult.rows.length === 0) return res.status(401).json({ error: 'User not found' });
 
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
-
-    await query('DELETE FROM refresh_tokens WHERE token=$1', [token]);
-    await query("INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1,$2, NOW() + interval '7 days')", [newRefreshToken, decoded.userId]);
-    setRefreshCookie(res, newRefreshToken);
+    // Issue a new access token only; keep the same refresh token cookie
+    const accessToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
     res.json({ accessToken, token: accessToken, user: userResult.rows[0] });
   } catch (err) {
