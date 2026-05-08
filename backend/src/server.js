@@ -101,15 +101,22 @@ const start = async () => {
   try {
     await initDB();
     server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      const { isConfigured } = require('./lib/caldav');
-      if (!isConfigured()) {
-        console.warn('⚠ CalDAV not configured — iCloud sync disabled. Set CALDAV_* env vars to enable.');
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      try {
+        const { isConfigured } = require('./lib/caldav');
+        if (!isConfigured()) {
+          console.warn('⚠ CalDAV not configured — iCloud sync disabled.');
+        }
+      } catch (e) {
+        console.warn('⚠ CalDAV module not found — iCloud sync disabled.');
       }
     });
   } catch (err) {
-    console.error('Failed to start server:', err);
-    process.exit(1);
+    const msg = 'Failed to start server: ' + (err.stack || err) + '\n';
+    process.stderr.write(msg, () => {
+      process.exit(1);
+    });
   }
 };
 
