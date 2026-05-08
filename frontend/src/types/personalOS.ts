@@ -71,7 +71,7 @@ export interface HabitCompletion {
   completed_date: string
 }
 
-export type CaldavStatus = 'synced' | 'pending' | 'error' | 'disabled'
+export type CaldavStatus = 'synced' | 'pending' | 'error' | 'disabled' | 'not_configured'
 
 export interface PersonalOSState {
   tasks: Task[]
@@ -96,6 +96,7 @@ export type ClaudeOperation =
   | { type: 'add_next_step'; task_id: string; text: string }
   | { type: 'complete_next_step'; task_id: string; step_index: number }
   | { type: 'create_task'; title: string; category: Task['category']; priority: Task['priority']; status: Task['status']; assigned_day: string | null; duration_minutes: number; scheduled_time: string | null }
+  | { type: 'create_habit'; name: string; category: Habit['category']; time_of_day: Habit['time_of_day']; duration_minutes: number }
   | { type: 'complete_habit'; habit_id: string }
   | { type: 'resolve_recurring'; recurring_id: string; reason: string }
   | { type: 'schedule_warning'; message: string }
