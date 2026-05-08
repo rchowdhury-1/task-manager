@@ -97,6 +97,12 @@ const initDB = async () => {
       );
     `);
 
+    // Base schema column guards — handles tables that pre-date column additions
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color VARCHAR(7) DEFAULT '#10b981';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+    `);
+
     // Personal OS migration
     const migrationPath = path.join(__dirname, '../db/migrations/001_personal_os.sql');
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');

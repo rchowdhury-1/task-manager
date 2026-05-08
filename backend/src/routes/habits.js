@@ -30,7 +30,7 @@ router.get('/', async (req, res, next) => {
     const wEnd = weekEnd();
 
     const habitsResult = await query(
-      'SELECT * FROM habits WHERE user_id=$1 AND active=TRUE ORDER BY sort_order ASC, created_at ASC',
+      'SELECT * FROM habits WHERE user_id=$1 AND active=TRUE ORDER BY sort_order ASC, id ASC',
       [userId]
     );
 
