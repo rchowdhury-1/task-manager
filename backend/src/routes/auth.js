@@ -140,6 +140,16 @@ router.post('/logout', authenticate, async (req, res, next) => {
   }
 });
 
+// POST /api/auth/reseed — re-runs default data seeding for the logged-in user (idempotent)
+router.post('/reseed', authenticate, async (req, res, next) => {
+  try {
+    await seedUserDefaults(req.user.userId);
+    res.json({ message: 'Seed applied' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // DELETE /api/auth/account — permanently deletes the logged-in user and all their data
 router.delete('/account', authenticate, async (req, res, next) => {
   try {
