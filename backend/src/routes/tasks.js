@@ -68,7 +68,7 @@ router.post('/', async (req, res, next) => {
       `INSERT INTO tasks
          (user_id, title, category, priority, status, assigned_day, day_of_week,
           duration_minutes, scheduled_time, notes, last_left_off, next_steps)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb)
        RETURNING *`,
       [userId, title, category, priority, status, assigned_day || null, day_of_week || null,
        duration_minutes, scheduled_time || null, notes || null, last_left_off || null,
@@ -77,7 +77,7 @@ router.post('/', async (req, res, next) => {
     const task = result.rows[0];
 
     await query(
-      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
       [task.id, userId, 'created', JSON.stringify({ title, category, status })]
     );
 
@@ -117,12 +117,17 @@ router.patch('/:id', async (req, res, next) => {
 
     const updates = {};
     for (const key of allowed) {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
+      if (req.body[key] !== undefined) {
+        // Serialize JSONB fields so pg doesn't treat them as PostgreSQL arrays
+        updates[key] = key === 'next_steps' ? JSON.stringify(req.body[key]) : req.body[key];
+      }
     }
 
     if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields to update' });
 
-    const setClauses = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(', ');
+    const setClauses = Object.keys(updates).map((k, i) =>
+      k === 'next_steps' ? `${k} = $${i + 2}::jsonb` : `${k} = $${i + 2}`
+    ).join(', ');
     const values = Object.values(updates);
 
     const result = await query(
@@ -134,7 +139,7 @@ router.patch('/:id', async (req, res, next) => {
     // Activity log for status changes
     if (updates.status && updates.status !== prev.status) {
       await query(
-        'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+        'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
         [id, userId, 'moved', JSON.stringify({ from: prev.status, to: updates.status })]
       );
     }
@@ -201,7 +206,7 @@ router.post('/:id/activity', async (req, res, next) => {
     if (taskCheck.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
 
     const result = await query(
-      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4) RETURNING *',
+      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb) RETURNING *',
       [id, userId, action, payload ? JSON.stringify(payload) : null]
     );
     res.status(201).json(result.rows[0]);
@@ -228,12 +233,12 @@ router.patch('/:id/next-steps/:stepIndex', async (req, res, next) => {
     steps[idx] = { ...steps[idx], done: !steps[idx].done };
 
     const result = await query(
-      'UPDATE tasks SET next_steps=$1, updated_at=NOW() WHERE id=$2 RETURNING *',
+      'UPDATE tasks SET next_steps=$1::jsonb, updated_at=NOW() WHERE id=$2 RETURNING *',
       [JSON.stringify(steps), id]
     );
 
     await query(
-      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
       [id, userId, 'next_step_added', JSON.stringify({ index: idx, done: steps[idx].done })]
     );
 

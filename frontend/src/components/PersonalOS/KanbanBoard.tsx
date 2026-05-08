@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   DndContext, DragEndEvent, DragOverEvent, DragStartEvent,
   DragOverlay, PointerSensor, useSensor, useSensors,
@@ -123,8 +124,11 @@ function AddTaskForm({ status, onClose }: { status: Status; onClose: () => void 
         duration_minutes: 60,
       });
       await refetch();
-    } catch { /* silent */ }
-    onClose();
+      onClose();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to create task';
+      toast.error(msg);
+    }
   };
 
   return (

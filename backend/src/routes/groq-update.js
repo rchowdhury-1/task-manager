@@ -189,12 +189,12 @@ const handlers = {
     );
     if (result.rows.length === 0) throw new Error(`Task ${op.task_id} not found`);
     await client.query(
-      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
       [op.task_id, userId, 'groq_update', JSON.stringify({ type: 'move_task', new_status: op.new_status })]
     );
     if (op.new_status === 'done') {
       await client.query(
-        'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+        'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
         [op.task_id, userId, 'completed', JSON.stringify({ via: 'groq' })]
       );
     }
@@ -223,7 +223,7 @@ const handlers = {
     if (result.rows.length === 0) throw new Error(`Task ${op.task_id} not found`);
 
     await client.query(
-      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
       [op.task_id, userId, 'groq_update', JSON.stringify({ type: 'update_task', fields: updates })]
     );
     return result.rows[0];
@@ -237,11 +237,11 @@ const handlers = {
     steps.push({ text: sanitize(op.text, 300), done: false });
 
     const result = await client.query(
-      'UPDATE tasks SET next_steps=$1, updated_at=NOW() WHERE id=$2 RETURNING *',
+      'UPDATE tasks SET next_steps=$1::jsonb, updated_at=NOW() WHERE id=$2 RETURNING *',
       [JSON.stringify(steps), op.task_id]
     );
     await client.query(
-      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
       [op.task_id, userId, 'next_step_added', JSON.stringify({ text: op.text })]
     );
     return result.rows[0];
@@ -256,11 +256,11 @@ const handlers = {
 
     steps[op.step_index] = { ...steps[op.step_index], done: true };
     const result = await client.query(
-      'UPDATE tasks SET next_steps=$1, updated_at=NOW() WHERE id=$2 RETURNING *',
+      'UPDATE tasks SET next_steps=$1::jsonb, updated_at=NOW() WHERE id=$2 RETURNING *',
       [JSON.stringify(steps), op.task_id]
     );
     await client.query(
-      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
       [op.task_id, userId, 'groq_update', JSON.stringify({ type: 'complete_next_step', index: op.step_index })]
     );
     return result.rows[0];
@@ -274,7 +274,7 @@ const handlers = {
        op.assigned_day || null, op.duration_minutes || 60, op.scheduled_time || null]
     );
     await client.query(
-      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4)',
+      'INSERT INTO task_activity (task_id, user_id, action, payload) VALUES ($1,$2,$3,$4::jsonb)',
       [result.rows[0].id, userId, 'created', JSON.stringify({ via: 'groq' })]
     );
     return result.rows[0];
