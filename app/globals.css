@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design tokens ─────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --color-page:          #FAFAFA;
+  --color-surface:       #FFFFFF;
+  --color-surface-raised:#F5F5F7;
+
+  /* Border */
+  --color-border:        #E5E5E7;
+
+  /* Text */
+  --color-text-primary:  #1C1C1E;
+  --color-text-secondary:#6B6B70;
+  --color-text-tertiary: #98989F;
+
+  /* Accent (red) */
+  --color-accent:        #DC2626;
+  --color-accent-hover:  #B91C1C;
+  --color-accent-muted:  #FEE2E2;
+
+  /* Priority */
+  --color-p1: #DC2626;
+  --color-p2: #F59E0B;
+  --color-p3: #10B981;
+}
+
+.dark {
+  /* Surfaces */
+  --color-page:          #0F0F10;
+  --color-surface:       #1C1C1E;
+  --color-surface-raised:#2C2C2E;
+
+  /* Border */
+  --color-border:        #2E2E32;
+
+  /* Text */
+  --color-text-primary:  #F5F5F7;
+  --color-text-secondary:#98989F;
+  --color-text-tertiary: #6B6B70;
+
+  /* Accent */
+  --color-accent:        #EF4444;
+  --color-accent-hover:  #DC2626;
+  --color-accent-muted:  #3A1F1F;
+
+  /* Priority */
+  --color-p1: #EF4444;
+  --color-p2: #F59E0B;
+  --color-p3: #10B981;
+}
