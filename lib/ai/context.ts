@@ -66,8 +66,8 @@ export async function buildUserContext(userId: string, db: DB): Promise<string> 
     }
   }
 
-  // Recurring
-  lines.push(`\nRecurring (${userRecurring.length}):`);
+  // Recurring (clearly labelled as separate table)
+  lines.push(`\nRecurring tasks (${userRecurring.length}) — these are NOT in the tasks table, use delete_recurring to remove:`);
   if (userRecurring.length === 0) {
     lines.push('- (none)');
   } else {
@@ -75,7 +75,7 @@ export async function buildUserContext(userId: string, db: DB): Promise<string> 
       const days = (r.daysOfWeek ?? []).map(d => DAY_NAMES[d]).join(',');
       const time = r.scheduledTime ? ` ${r.scheduledTime}` : '';
       const active = r.active ? '' : ' [inactive]';
-      lines.push(`- ${r.id}: '${r.title}' (${r.category}, ${days}${time}, ${r.durationMinutes}m)${active}`);
+      lines.push(`- ${r.id}: '${r.title}' (${r.category}, ${days}${time}, ${r.durationMinutes}m) [RECURRING]${active}`);
     }
   }
 

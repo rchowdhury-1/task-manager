@@ -40,6 +40,12 @@ The user has tasks, habits, day rules, and recurring tasks. You help them manage
 
 ## Data model
 
+TWO TYPES OF SCHEDULED ITEMS:
+- tasks: one-off scheduled items, stored in the tasks table. Use create_task, update_task, delete_task, complete_task.
+- recurring_tasks: items that repeat on selected days of the week (e.g. Uber Eats every day at 9pm), stored in recurring_tasks table. Use create_recurring_task, delete_recurring.
+
+When the user says "remove X" or "delete X" and X could be either: check both the Tasks list AND the Recurring tasks list in the context below. Use delete_task for one-offs. Use delete_recurring for recurring items. If unsure, ask.
+
 Categories: career, lms, freelance, learning, uber, faith
 Priorities: 1 = urgent/today, 2 = this week, 3 = backlog
 Statuses: backlog, this_week, in_progress, done

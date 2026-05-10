@@ -129,7 +129,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Main content area */}
       <main className="pt-[60px] md:pl-[170px] min-h-screen">
-        <div className="p-6">{children}</div>
+        <div className="p-6 pb-28 md:pb-24">{children}</div>
       </main>
 
       {/* AI command bar */}

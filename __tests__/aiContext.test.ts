@@ -49,7 +49,7 @@ describe('buildUserContext', () => {
     expect(result).toContain('Tasks (0):');
     expect(result).toContain('- (none)');
     expect(result).toContain('Habits (0):');
-    expect(result).toContain('Recurring (0):');
+    expect(result).toContain('Recurring tasks (0)');
   });
 
   it('includes today\'s date', async () => {

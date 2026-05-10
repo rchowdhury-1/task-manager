@@ -76,25 +76,23 @@ export function TaskBlock({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={handleKey}
+      role={isRecurring ? undefined : 'button'}
+      tabIndex={isRecurring ? undefined : 0}
+      onClick={isRecurring ? undefined : onClick}
+      onKeyDown={isRecurring ? undefined : handleKey}
       aria-label={`Task: ${title}, ${STATUS_LABELS[status]}`}
       style={{
         height: `${height}px`,
         borderLeftColor: PRIORITY_COLORS[priority],
         opacity: isDone ? 0.6 : 1,
       }}
-      className="
+      className={`
         group relative flex flex-col p-2 rounded-lg
-        bg-surface border border-border ${isRecurring ? 'border-l-4 border-l-dashed' : 'border-l-4'}
-        cursor-pointer select-none overflow-hidden
-        hover:brightness-95 dark:hover:brightness-110
-        active:ring-2 active:ring-accent
+        bg-surface border border-border border-l-4
+        ${isRecurring ? 'border-l-dashed cursor-default' : 'cursor-pointer hover:brightness-95 dark:hover:brightness-110 active:ring-2 active:ring-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent'}
+        select-none overflow-hidden
         transition-all duration-150
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
-      "
+      `}
     >
       {/* Drag handle */}
       <div

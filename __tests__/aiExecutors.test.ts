@@ -178,6 +178,24 @@ describe('create_recurring_task', () => {
   });
 });
 
+// ─── delete_recurring ───────────────────────────────────────────────────────
+
+describe('delete_recurring', () => {
+  it('deletes with valid id', async () => {
+    const db = mockDb([{ id: '550e8400-e29b-41d4-a716-446655440000', title: 'Uber Eats' }]);
+    const result = await EXECUTORS.delete_recurring(USER_ID, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+    }, db);
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects invalid UUID', async () => {
+    const db = mockDb();
+    const result = await EXECUTORS.delete_recurring(USER_ID, { id: 'bad' }, db);
+    expect(result.ok).toBe(false);
+  });
+});
+
 // ─── Security: user_id from args is ignored ─────────────────────────────────
 
 describe('security boundary', () => {

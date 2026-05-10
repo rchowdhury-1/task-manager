@@ -199,4 +199,19 @@ export const TOOLS: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'delete_recurring',
+      description: 'Delete a recurring task permanently. Use this for items that repeat on a schedule (not one-off tasks).',
+      parameters: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'Recurring task UUID' },
+        },
+        required: ['id'],
+        additionalProperties: false,
+      },
+    },
+  },
 ];

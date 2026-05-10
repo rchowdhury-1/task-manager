@@ -257,6 +257,18 @@ async function createRecurring(userId: string, args: Record<string, unknown>, db
   return { ok: true, data: { id: recurring.id, title: recurring.title } };
 }
 
+async function deleteRecurring(userId: string, args: Record<string, unknown>, db: DB): Promise<ToolResult> {
+  const parsed = idArg.safeParse(args);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const [deleted] = await db.delete(recurringTasks)
+    .where(and(eq(recurringTasks.id, parsed.data.id), eq(recurringTasks.userId, userId)))
+    .returning({ id: recurringTasks.id, title: recurringTasks.title });
+
+  if (!deleted) return { ok: false, error: `Recurring task ${parsed.data.id} not found` };
+  return { ok: true, data: { id: deleted.id, title: deleted.title, deleted: true } };
+}
+
 // ─── Export map ─────────────────────────────────────────────────────────────
 
 export const EXECUTORS: Record<string, ExecutorFn> = {
@@ -269,4 +281,5 @@ export const EXECUTORS: Record<string, ExecutorFn> = {
   complete_habit: completeHabit,
   set_day_rule: setDayRule,
   create_recurring_task: createRecurring,
+  delete_recurring: deleteRecurring,
 };
