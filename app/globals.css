@@ -2,20 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  /* Prevent iOS Safari zoom on input focus — inputs below 16px trigger auto-zoom */
+/* Prevent iOS Safari zoom on input focus.
+   Uses !important because component utility classes
+   (text-sm, text-xs) would otherwise override @layer base. */
+@media (max-width: 767px) {
   input,
   textarea,
-  select {
-    font-size: 16px;
-  }
-
-  @media (min-width: 768px) {
-    input,
-    textarea,
-    select {
-      font-size: inherit;
-    }
+  select,
+  [contenteditable] {
+    font-size: 16px !important;
   }
 }
 
