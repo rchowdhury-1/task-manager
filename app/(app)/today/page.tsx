@@ -82,7 +82,7 @@ function StatCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-surface border border-border rounded-lg p-4 space-y-1">
+    <div className="bg-surface border border-border rounded-lg p-3 md:p-4 space-y-1">
       <div className="flex items-center gap-1.5 text-xs text-secondary">
         <span>{icon}</span>
         <span>{label}</span>
@@ -328,8 +328,8 @@ export default function TodayPage() {
         <p className="text-sm text-secondary mt-0.5">{longDate()}</p>
       </div>
 
-      {/* Stats row — horizontal scroll on mobile, grid on desktop */}
-      <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0 [&>*]:min-w-[140px] [&>*]:md:min-w-0">
+      {/* Stats row — 2x2 grid on mobile, 4-col on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard icon="!" label="P1 Tasks">
           <p className="text-2xl font-bold text-p1">{p1Count} <span className="text-sm font-normal text-secondary">Remaining</span></p>
         </StatCard>
