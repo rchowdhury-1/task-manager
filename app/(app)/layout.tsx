@@ -77,12 +77,12 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       <header className="fixed top-0 left-0 right-0 z-40 h-[60px] bg-surface border-b border-border flex items-center px-4 md:px-6">
         <Link href="/today" className="flex items-center gap-2 mr-4 md:mr-8 shrink-0">
           <Image
-            src="/icon-mark.png"
+            src="/icon-mark.svg"
             alt=""
             width={32}
             height={32}
             priority
-            className="h-8 w-8"
+            className="h-8 w-8 text-accent"
           />
           <span className="text-lg font-semibold tracking-tight text-primary">
             Personal OS

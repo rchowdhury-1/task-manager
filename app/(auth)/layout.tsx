@@ -10,12 +10,12 @@ export default function AuthLayout({
       <div className="w-full max-w-[400px]">
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <Image
-            src="/icon-mark.png"
+            src="/icon-mark.svg"
             alt=""
             width={40}
             height={40}
             priority
-            className="h-10 w-10"
+            className="h-10 w-10 text-accent"
           />
           <span className="text-2xl font-semibold tracking-tight text-primary">
             Personal OS
