@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 import path from 'path';
 
-const SOURCE = path.join(process.cwd(), 'design/stitch/personalos-logo-v2.png');
+const SOURCE = path.join(process.cwd(), 'design/stitch/personal-os-logo-v3.png');
 const PUBLIC = path.join(process.cwd(), 'public');
 
 async function main() {

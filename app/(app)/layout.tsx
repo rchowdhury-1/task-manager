@@ -122,19 +122,6 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar - desktop only */}
       <aside className="hidden md:flex fixed top-[60px] left-0 bottom-0 w-[170px] bg-surface border-r border-border flex-col pt-6 px-3 z-30">
-        <div className="mb-6 px-2 flex items-center gap-2">
-          <Image
-            src="/icon-mark.png"
-            alt=""
-            width={24}
-            height={24}
-            className="h-6 w-6"
-          />
-          <div>
-            <p className="text-sm font-semibold text-primary">Personal OS</p>
-            <p className="text-xs text-tertiary">Deep Work Mode</p>
-          </div>
-        </div>
         <nav className="flex flex-col gap-0.5">
           {NAV_ITEMS.map(item => {
             const isActive = pathname === item.href;
