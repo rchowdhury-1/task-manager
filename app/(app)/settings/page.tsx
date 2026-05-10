@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DayRulesSection } from '@/components/settings/DayRulesSection';
 import { HabitsSection } from '@/components/settings/HabitsSection';
 import { AccountSection } from '@/components/settings/AccountSection';
@@ -14,6 +14,8 @@ const TABS: { id: Tab; label: string; description: string }[] = [
 ];
 
 export default function SettingsPage() {
+  useEffect(() => { document.title = 'Settings · Personal OS'; }, []);
+
   const [activeTab, setActiveTab] = useState<Tab>('day-rules');
 
   const currentTab = TABS.find(t => t.id === activeTab)!;

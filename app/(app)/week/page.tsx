@@ -33,6 +33,8 @@ function todayDayIndex(): number {
 }
 
 export default function WeekPage() {
+  useEffect(() => { document.title = 'Week · Personal OS'; }, []);
+
   const [weekStart, setWeekStart] = useState(() => mondayOf(todayISO()));
   const [mode, setMode] = useState<ViewMode>('stack');
   const [selectedDayIndex, setSelectedDayIndex] = useState(todayDayIndex);

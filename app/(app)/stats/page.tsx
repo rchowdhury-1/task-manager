@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStats, type StatsRange } from '@/lib/api/hooks';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -66,6 +66,8 @@ function StatCard({
 }
 
 export default function StatsPage() {
+  useEffect(() => { document.title = 'Stats · Personal OS'; }, []);
+
   const [range, setRange] = useState<StatsRange>('30d');
   const { data, isLoading, error, refetch } = useStats(range);
 

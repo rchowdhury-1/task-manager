@@ -1,10 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { registerSchema } from '@/lib/validation/auth';
 
 export default function RegisterPage() {
+  useEffect(() => { document.title = 'Create account · Personal OS'; }, []);
+
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

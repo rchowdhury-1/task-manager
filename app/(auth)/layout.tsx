@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export default function AuthLayout({
   children,
 }: {
@@ -6,9 +8,23 @@ export default function AuthLayout({
   return (
     <main className="min-h-screen bg-page flex items-center justify-center px-4">
       <div className="w-full max-w-[400px]">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-primary">Personal OS</h1>
-          <p className="mt-1 text-sm text-secondary">Your personal operating system</p>
+        <div className="flex flex-col items-center mb-8">
+          <Image
+            src="/logo-light.png"
+            alt="Personal OS"
+            width={220}
+            height={49}
+            priority
+            className="block dark:hidden h-12 w-auto"
+          />
+          <Image
+            src="/logo-dark.png"
+            alt="Personal OS"
+            width={220}
+            height={49}
+            priority
+            className="hidden dark:block h-12 w-auto"
+          />
         </div>
         {children}
       </div>

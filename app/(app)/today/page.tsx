@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
   useToday,
@@ -192,6 +192,8 @@ function HabitRow({
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function TodayPage() {
+  useEffect(() => { document.title = 'Today · Personal OS'; }, []);
+
   const today = todayISO();
   const week = useMemo(() => weekDays(today), [today]);
   const mondayStr = week[0];

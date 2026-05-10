@@ -4,7 +4,7 @@
 // If true manual ordering is needed, add a sort_order/position column in 4d.
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -81,6 +81,8 @@ function DraggableCard({ task, onClick }: { task: Task; onClick: () => void }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function BoardsPage() {
+  useEffect(() => { document.title = 'Boards · Personal OS'; }, []);
+
   const { data: tasks, isLoading, error, refetch } = useTasks();
   const updateTask = useUpdateTask();
   const createTask = useCreateTask();

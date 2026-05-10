@@ -10,8 +10,17 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Personal OS",
-  description: "Your personal operating system",
+  title: {
+    default: 'Personal OS',
+    template: '%s · Personal OS',
+  },
+  description: 'Focus on what matters. AI-powered personal OS for tasks, habits, and weekly focus.',
+  openGraph: {
+    title: 'Personal OS',
+    description: 'Focus on what matters.',
+    type: 'website',
+    siteName: 'Personal OS',
+  },
 };
 
 // Inline script runs synchronously before first paint to prevent flash

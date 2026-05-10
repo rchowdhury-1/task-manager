@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useLogout, useMe } from '@/lib/api/hooks';
 import { ActiveTaskProvider } from '@/lib/state/activeTask';
@@ -74,7 +75,24 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-page">
       {/* Top header bar */}
       <header className="fixed top-0 left-0 right-0 z-40 h-[60px] bg-surface border-b border-border flex items-center px-4 md:px-6">
-        <span className="text-lg font-bold text-primary mr-4 md:mr-8">Personal OS</span>
+        <span className="mr-4 md:mr-8 shrink-0">
+          <Image
+            src="/logo-light.png"
+            alt="Personal OS"
+            width={180}
+            height={40}
+            priority
+            className="block dark:hidden h-8 w-auto"
+          />
+          <Image
+            src="/logo-dark.png"
+            alt="Personal OS"
+            width={180}
+            height={40}
+            priority
+            className="hidden dark:block h-8 w-auto"
+          />
+        </span>
 
         {/* Desktop nav tabs - hidden on mobile */}
         <nav className="hidden md:flex items-center gap-1">
@@ -110,8 +128,20 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Sidebar - desktop only */}
       <aside className="hidden md:flex fixed top-[60px] left-0 bottom-0 w-[170px] bg-surface border-r border-border flex-col pt-6 px-3 z-30">
         <div className="mb-6 px-2">
-          <p className="text-sm font-semibold text-primary">Personal OS</p>
-          <p className="text-xs text-tertiary">Deep Work Mode</p>
+          <Image
+            src="/logo-light.png"
+            alt="Personal OS"
+            width={140}
+            height={31}
+            className="block dark:hidden h-7 w-auto"
+          />
+          <Image
+            src="/logo-dark.png"
+            alt="Personal OS"
+            width={140}
+            height={31}
+            className="hidden dark:block h-7 w-auto"
+          />
         </div>
         <nav className="flex flex-col gap-0.5">
           {NAV_ITEMS.map(item => {
