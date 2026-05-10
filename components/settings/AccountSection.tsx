@@ -44,7 +44,7 @@ export function AccountSection() {
     <div className="space-y-6 max-w-lg">
       {/* Profile card */}
       <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
           {/* Avatar */}
           <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-lg font-semibold shrink-0">
             {me?.name
@@ -53,7 +53,7 @@ export function AccountSection() {
           </div>
 
           {/* Name + Email */}
-          <div className="flex-1 space-y-3">
+          <div className="w-full flex-1 space-y-3">
             <div>
               <label className="text-[10px] font-semibold text-secondary uppercase tracking-wider block mb-1">
                 Full Name
@@ -113,7 +113,7 @@ export function AccountSection() {
         <button
           onClick={() => logout.mutate()}
           disabled={logout.isPending}
-          className="px-5 py-2.5 text-sm font-medium bg-p1 text-white rounded-lg hover:bg-p1/90 transition-colors disabled:opacity-50"
+          className="w-full sm:w-auto px-5 py-2.5 text-sm font-medium bg-p1 text-white rounded-lg hover:bg-p1/90 transition-colors disabled:opacity-50"
         >
           {logout.isPending ? 'Signing out…' : 'Log Out'}
         </button>

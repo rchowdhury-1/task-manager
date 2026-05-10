@@ -328,8 +328,8 @@ export default function TodayPage() {
         <p className="text-sm text-secondary mt-0.5">{longDate()}</p>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Stats row — horizontal scroll on mobile, grid on desktop */}
+      <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0 [&>*]:min-w-[140px] [&>*]:md:min-w-0">
         <StatCard icon="!" label="P1 Tasks">
           <p className="text-2xl font-bold text-p1">{p1Count} <span className="text-sm font-normal text-secondary">Remaining</span></p>
         </StatCard>
@@ -462,28 +462,63 @@ export default function TodayPage() {
               <p className="text-xs text-tertiary">Add some in Settings to start tracking.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {habitsBySection.map(({ section, habits }) => (
-                <div
-                  key={section}
-                  className="bg-surface border border-border rounded-lg p-4 space-y-1"
-                >
-                  <h3 className="text-xs font-semibold text-secondary uppercase tracking-wide border-b border-border pb-2 mb-2">
-                    {SECTION_LABELS[section]}
-                  </h3>
-                  {habits.map(habit => (
-                    <HabitRow
+            <>
+              {/* Mobile: 2-col tappable pill grid */}
+              <div className="grid grid-cols-2 gap-2 md:hidden">
+                {activeHabits.map(habit => {
+                  const done = completionsMap.has(`${habit.id}:${today}`);
+                  return (
+                    <button
                       key={habit.id}
-                      habit={habit}
-                      week={week}
-                      todayStr={today}
-                      completionsMap={completionsMap}
-                      onToggle={handleHabitToggle}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
+                      onClick={() => handleHabitToggle(habit.id, today, done)}
+                      className={`
+                        flex items-center justify-between px-3 py-3 rounded-xl border transition-colors
+                        ${done
+                          ? 'bg-accent/10 border-accent text-primary'
+                          : 'bg-surface border-border text-primary'
+                        }
+                      `}
+                    >
+                      <span className="text-sm font-medium truncate">{habit.name}</span>
+                      <div className={`
+                        w-6 h-6 rounded-full flex items-center justify-center shrink-0 ml-2
+                        ${done ? 'bg-accent text-white' : 'border-2 border-border'}
+                      `}>
+                        {done && (
+                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Desktop: section-grouped rows */}
+              <div className="hidden md:block space-y-4">
+                {habitsBySection.map(({ section, habits }) => (
+                  <div
+                    key={section}
+                    className="bg-surface border border-border rounded-lg p-4 space-y-1"
+                  >
+                    <h3 className="text-xs font-semibold text-secondary uppercase tracking-wide border-b border-border pb-2 mb-2">
+                      {SECTION_LABELS[section]}
+                    </h3>
+                    {habits.map(habit => (
+                      <HabitRow
+                        key={habit.id}
+                        habit={habit}
+                        week={week}
+                        todayStr={today}
+                        completionsMap={completionsMap}
+                        onToggle={handleHabitToggle}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

@@ -88,6 +88,7 @@ export default function BoardsPage() {
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Set<Category>>(new Set());
+  const [mobileColIndex, setMobileColIndex] = useState(0);
 
   const allTasks = tasks ?? [];
 
@@ -261,34 +262,130 @@ export default function BoardsPage() {
         </div>
       ) : (
         /* Kanban */
-        <DndContext
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragCancel={() => setActiveId(null)}
-          collisionDetection={rectIntersection}
-        >
-          {/* Desktop: 4 columns, Mobile: horizontal scroll */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto">
-            {columns.map(col => (
-              <ColumnWithCreate
-                key={col.id}
-                column={col}
-                tasks={col.tasks}
-                onClickTask={openTaskDetail}
-                onCreate={(title) => handleCreateInColumn(col.id, title)}
-              />
-            ))}
+        <>
+          {/* ── Mobile: Column tabs + single column ── */}
+          <div className="md:hidden space-y-3">
+            {/* Tab bar */}
+            <div className="flex bg-surface-raised rounded-lg p-0.5">
+              {COLUMNS.map((col, i) => (
+                <button
+                  key={col.id}
+                  onClick={() => setMobileColIndex(i)}
+                  className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    i === mobileColIndex
+                      ? 'bg-surface text-primary shadow-sm'
+                      : 'text-secondary'
+                  }`}
+                >
+                  {col.label}
+                  <span className="ml-1 text-[10px] text-tertiary">
+                    {columns[i].tasks.length}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Single column */}
+            <MobileColumn
+              column={columns[mobileColIndex]}
+              onClickTask={openTaskDetail}
+              onCreate={(title) => handleCreateInColumn(columns[mobileColIndex].id, title)}
+            />
           </div>
 
-          <DragOverlay>
-            {activeTask ? (
-              <TaskCard task={activeTask} onClick={() => {}} isDragOverlay />
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+          {/* ── Desktop: Full 4-column kanban with DnD ── */}
+          <div className="hidden md:block">
+            <DndContext
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={() => setActiveId(null)}
+              collisionDetection={rectIntersection}
+            >
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {columns.map(col => (
+                  <ColumnWithCreate
+                    key={col.id}
+                    column={col}
+                    tasks={col.tasks}
+                    onClickTask={openTaskDetail}
+                    onCreate={(title) => handleCreateInColumn(col.id, title)}
+                  />
+                ))}
+              </div>
+
+              <DragOverlay>
+                {activeTask ? (
+                  <TaskCard task={activeTask} onClick={() => {}} isDragOverlay />
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
+        </>
       )}
     </div>
     </ErrorBoundary>
+  );
+}
+
+// Mobile column (no DnD, tappable cards)
+function MobileColumn({
+  column,
+  onClickTask,
+  onCreate,
+}: {
+  column: { id: Status; label: string; dot?: string; tasks: Task[] };
+  onClickTask: (id: string) => void;
+  onCreate: (title: string) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+
+  const submitAdd = () => {
+    if (newTitle.trim()) onCreate(newTitle.trim());
+    setNewTitle('');
+    setAdding(false);
+  };
+
+  return (
+    <div className="bg-surface rounded-xl p-3 min-h-[300px] flex flex-col">
+      {/* Cards */}
+      <div className="flex-1 space-y-2">
+        {column.tasks.length === 0 && !adding && (
+          <div className="flex items-center justify-center h-24 border border-dashed border-border rounded-lg">
+            <span className="text-sm text-tertiary italic">No tasks</span>
+          </div>
+        )}
+        {column.tasks.map(task => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            onClick={() => onClickTask(task.id)}
+          />
+        ))}
+      </div>
+
+      {/* Add task */}
+      {adding ? (
+        <form onSubmit={e => { e.preventDefault(); submitAdd(); }} className="mt-2">
+          <input
+            autoFocus
+            value={newTitle}
+            onChange={e => setNewTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Escape') { setAdding(false); setNewTitle(''); } }}
+            onBlur={submitAdd}
+            placeholder="Task title…"
+            className="w-full px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </form>
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="mt-2 w-full py-2 text-sm text-tertiary border border-dashed border-border rounded-lg hover:text-accent hover:border-accent transition-colors"
+        >
+          + Add Task
+        </button>
+      )}
+    </div>
   );
 }
 

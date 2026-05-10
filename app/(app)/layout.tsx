@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useLogout, useMe } from '@/lib/api/hooks';
@@ -8,6 +8,7 @@ import { ActiveTaskProvider } from '@/lib/state/activeTask';
 import { TaskDetailPanel } from '@/components/TaskDetailPanel';
 import { AICommandBar } from '@/components/AICommandBar';
 import { KeyboardHelp } from '@/components/KeyboardHelp';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 import Providers from '../providers';
 
 const NAV_ITEMS = [
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
 function AvatarMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const { data: me } = useMe();
   const logout = useLogout();
 
@@ -48,6 +50,12 @@ function AvatarMenu() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-40 bg-surface border border-border rounded-lg shadow-lg py-1 z-50">
           <button
+            onClick={() => { router.push('/settings'); setOpen(false); }}
+            className="w-full text-left px-3 py-2 text-sm text-primary hover:bg-surface-raised transition-colors"
+          >
+            Settings
+          </button>
+          <button
             onClick={() => logout.mutate()}
             className="w-full text-left px-3 py-2 text-sm text-primary hover:bg-surface-raised transition-colors"
           >
@@ -65,8 +73,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-page">
       {/* Top header bar */}
-      <header className="fixed top-0 left-0 right-0 z-40 h-[60px] bg-surface border-b border-border flex items-center px-6">
-        <span className="text-lg font-bold text-primary mr-8">Personal OS</span>
+      <header className="fixed top-0 left-0 right-0 z-40 h-[60px] bg-surface border-b border-border flex items-center px-4 md:px-6">
+        <span className="text-lg font-bold text-primary mr-4 md:mr-8">Personal OS</span>
 
         {/* Desktop nav tabs - hidden on mobile */}
         <nav className="hidden md:flex items-center gap-1">
@@ -128,31 +136,17 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content area */}
+      {/* pb-36 on mobile: 56px bottom nav + 56px AI bar + padding */}
+      {/* pb-24 on desktop: AI pill clearance */}
       <main className="pt-[60px] md:pl-[170px] min-h-screen">
-        <div className="p-6 pb-28 md:pb-24">{children}</div>
+        <div className="px-4 pt-4 pb-36 md:px-6 md:pt-6 md:pb-24">{children}</div>
       </main>
 
       {/* AI command bar */}
       <AICommandBar />
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border flex items-center justify-around h-14 z-40">
-        {NAV_ITEMS.map(item => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`
-                flex flex-col items-center text-[10px] font-medium py-1
-                ${isActive ? 'text-accent' : 'text-secondary'}
-              `}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <MobileBottomNav />
     </div>
   );
 }

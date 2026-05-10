@@ -2,11 +2,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTasks, useDayRules, useRecurring } from '@/lib/api/hooks';
 import { useActiveTask } from '@/lib/state/activeTask';
-import { weekDays, mondayOf, todayISO, addDaysISO, weekRangeLabel } from '@/lib/utils/dates';
+import { weekDays, mondayOf, todayISO, addDaysISO, weekRangeLabel, isToday, formatTimeShort, addTime } from '@/lib/utils/dates';
 import { WeekStackMode } from '@/components/WeekStackMode';
 import { WeekCalendarMode } from '@/components/WeekCalendarMode';
+import { WeekDayHeader } from '@/components/WeekDayHeader';
+import { TaskBlock } from '@/components/TaskBlock';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import type { Task, RecurringTask, DayRule } from '@/lib/types';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Task, RecurringTask, DayRule, DayFocus } from '@/lib/types';
 
 type ViewMode = 'calendar' | 'stack';
 
@@ -24,9 +27,15 @@ function Skeleton() {
   );
 }
 
+function todayDayIndex(): number {
+  const d = new Date().getDay(); // 0=Sun, 1=Mon, ...
+  return d === 0 ? 6 : d - 1; // convert to 0=Mon, 6=Sun
+}
+
 export default function WeekPage() {
   const [weekStart, setWeekStart] = useState(() => mondayOf(todayISO()));
   const [mode, setMode] = useState<ViewMode>('stack');
+  const [selectedDayIndex, setSelectedDayIndex] = useState(todayDayIndex);
 
   const days = useMemo(() => weekDays(weekStart), [weekStart]);
 
@@ -75,7 +84,10 @@ export default function WeekPage() {
   }, [dayRules]);
 
   // Navigation
-  const goToday = useCallback(() => setWeekStart(mondayOf(todayISO())), []);
+  const goToday = useCallback(() => {
+    setWeekStart(mondayOf(todayISO()));
+    setSelectedDayIndex(todayDayIndex());
+  }, []);
   const goPrev = useCallback(() => setWeekStart(prev => mondayOf(addDaysISO(prev, -7))), []);
   const goNext = useCallback(() => setWeekStart(prev => mondayOf(addDaysISO(prev, 7))), []);
 
@@ -104,6 +116,25 @@ export default function WeekPage() {
 
   const isCurrentWeek = weekStart === mondayOf(todayISO());
 
+  // Mobile single-day data
+  const selectedDay = days[selectedDayIndex];
+  const selectedDayTasks = tasksByDay[selectedDay] ?? [];
+  const selectedDayRecurring = recurringByDay[selectedDay] ?? [];
+  const selectedDow = new Date(`${selectedDay}T12:00:00`).getDay();
+  const selectedRule = dayRulesMap[selectedDow];
+  const selectedTotalMinutes =
+    selectedDayTasks.reduce((s, t) => s + (t.durationMinutes ?? 0), 0) +
+    selectedDayRecurring.reduce((s, r) => s + (r.durationMinutes ?? 0), 0);
+
+  const sortedDayTasks = [...selectedDayTasks].sort((a, b) => {
+    if (a.scheduledTime && b.scheduledTime) return a.scheduledTime.localeCompare(b.scheduledTime);
+    if (a.scheduledTime) return -1;
+    if (b.scheduledTime) return 1;
+    return a.priority - b.priority;
+  });
+
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
   return (
     <ErrorBoundary>
     <div className="space-y-4">
@@ -112,8 +143,8 @@ export default function WeekPage() {
         <h1 className="text-2xl font-bold text-primary">Week</h1>
 
         <div className="flex items-center gap-3">
-          {/* Mode toggle */}
-          <div className="flex bg-surface-raised rounded-lg p-0.5">
+          {/* Mode toggle — desktop only */}
+          <div className="hidden md:flex bg-surface-raised rounded-lg p-0.5">
             <button
               onClick={() => setMode('calendar')}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${
@@ -176,24 +207,137 @@ export default function WeekPage() {
         </span>
       </div>
 
-      {/* View */}
-      {mode === 'stack' ? (
-        <WeekStackMode
-          days={days}
-          tasksByDay={tasksByDay}
-          recurringByDay={recurringByDay}
-          dayRulesMap={dayRulesMap}
-          onClickTask={openTaskDetail}
-        />
-      ) : (
-        <WeekCalendarMode
-          days={days}
-          tasksByDay={tasksByDay}
-          recurringByDay={recurringByDay}
-          dayRulesMap={dayRulesMap}
-          onClickTask={openTaskDetail}
-        />
-      )}
+      {/* ── Mobile: Single-day view ── */}
+      <div className="md:hidden space-y-3">
+        {/* Day navigation row */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setSelectedDayIndex(i => Math.max(0, i - 1))}
+            disabled={selectedDayIndex === 0}
+            className="p-2 rounded-lg text-secondary hover:text-primary disabled:opacity-30 transition-colors"
+            aria-label="Previous day"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          {/* Day dots */}
+          <div className="flex items-center gap-2">
+            {dayNames.map((name, i) => {
+              const dayISO = days[i];
+              const isSel = i === selectedDayIndex;
+              const isTod = isToday(dayISO);
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSelectedDayIndex(i)}
+                  className={`
+                    w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center transition-colors
+                    ${isSel
+                      ? 'bg-accent text-white'
+                      : isTod
+                        ? 'text-accent border border-accent'
+                        : 'text-secondary hover:text-primary'
+                    }
+                  `}
+                >
+                  {name[0]}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={() => setSelectedDayIndex(i => Math.min(6, i + 1))}
+            disabled={selectedDayIndex === 6}
+            className="p-2 rounded-lg text-secondary hover:text-primary disabled:opacity-30 transition-colors"
+            aria-label="Next day"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Day card */}
+        <div className={`bg-surface rounded-xl p-4 ${isToday(selectedDay) ? 'ring-2 ring-accent' : ''}`}>
+          <WeekDayHeader
+            dateISO={selectedDay}
+            focusArea={selectedRule?.focusArea as DayFocus}
+            hoursUsed={selectedTotalMinutes / 60}
+            hoursCap={selectedRule?.maxFocusHours ?? 8}
+          />
+
+          {/* Tasks */}
+          <div className="space-y-2 mt-3">
+            {sortedDayTasks.length === 0 && selectedDayRecurring.length === 0 && (
+              <p className="text-center text-tertiary text-sm py-8">No tasks scheduled</p>
+            )}
+            {sortedDayTasks.map(task => (
+              <div key={task.id}>
+                {task.scheduledTime && (
+                  <p className="text-xs text-secondary mb-0.5 pl-1">
+                    {formatTimeShort(task.scheduledTime)} - {formatTimeShort(addTime(task.scheduledTime, task.durationMinutes))}
+                  </p>
+                )}
+                <TaskBlock
+                  title={task.title}
+                  category={task.category}
+                  priority={task.priority}
+                  durationMinutes={task.durationMinutes}
+                  scheduledTime={task.scheduledTime ?? undefined}
+                  status={task.status}
+                  pixelsPerMinute={0.8}
+                  onClick={() => openTaskDetail(task.id)}
+                />
+              </div>
+            ))}
+
+            {/* Recurring */}
+            {selectedDayRecurring.length > 0 && sortedDayTasks.length > 0 && (
+              <div className="border-t border-border pt-2" />
+            )}
+            {selectedDayRecurring.map(r => (
+              <div key={r.id}>
+                {r.scheduledTime && (
+                  <p className="text-xs text-secondary mb-0.5 pl-1">
+                    {formatTimeShort(r.scheduledTime)} - {formatTimeShort(addTime(r.scheduledTime, r.durationMinutes))}
+                  </p>
+                )}
+                <TaskBlock
+                  title={r.title}
+                  category={r.category}
+                  priority={r.priority ?? 2}
+                  durationMinutes={r.durationMinutes}
+                  scheduledTime={r.scheduledTime ?? undefined}
+                  status="backlog"
+                  isRecurring
+                  pixelsPerMinute={0.8}
+                  onClick={() => {}}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Desktop: Full week view ── */}
+      <div className="hidden md:block">
+        {mode === 'stack' ? (
+          <WeekStackMode
+            days={days}
+            tasksByDay={tasksByDay}
+            recurringByDay={recurringByDay}
+            dayRulesMap={dayRulesMap}
+            onClickTask={openTaskDetail}
+          />
+        ) : (
+          <WeekCalendarMode
+            days={days}
+            tasksByDay={tasksByDay}
+            recurringByDay={recurringByDay}
+            dayRulesMap={dayRulesMap}
+            onClickTask={openTaskDetail}
+          />
+        )}
+      </div>
     </div>
     </ErrorBoundary>
   );
