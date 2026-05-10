@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Prevent iOS Safari zoom on input focus — inputs below 16px trigger auto-zoom */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  @media (min-width: 768px) {
+    input,
+    textarea,
+    select {
+      font-size: inherit;
+    }
+  }
+}
+
 /* ─── Design tokens ─────────────────────────────────────────── */
 :root {
   /* Surfaces */
