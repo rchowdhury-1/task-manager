@@ -75,24 +75,19 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-page">
       {/* Top header bar */}
       <header className="fixed top-0 left-0 right-0 z-40 h-[60px] bg-surface border-b border-border flex items-center px-4 md:px-6">
-        <span className="mr-4 md:mr-8 shrink-0">
+        <Link href="/today" className="flex items-center gap-2 mr-4 md:mr-8 shrink-0">
           <Image
-            src="/logo-light.png"
-            alt="Personal OS"
-            width={180}
-            height={40}
+            src="/icon-mark.png"
+            alt=""
+            width={32}
+            height={32}
             priority
-            className="block dark:hidden h-8 w-auto"
+            className="h-8 w-8"
           />
-          <Image
-            src="/logo-dark.png"
-            alt="Personal OS"
-            width={180}
-            height={40}
-            priority
-            className="hidden dark:block h-8 w-auto"
-          />
-        </span>
+          <span className="text-lg font-semibold tracking-tight text-primary">
+            Personal OS
+          </span>
+        </Link>
 
         {/* Desktop nav tabs - hidden on mobile */}
         <nav className="hidden md:flex items-center gap-1">
@@ -127,21 +122,18 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar - desktop only */}
       <aside className="hidden md:flex fixed top-[60px] left-0 bottom-0 w-[170px] bg-surface border-r border-border flex-col pt-6 px-3 z-30">
-        <div className="mb-6 px-2">
+        <div className="mb-6 px-2 flex items-center gap-2">
           <Image
-            src="/logo-light.png"
-            alt="Personal OS"
-            width={140}
-            height={31}
-            className="block dark:hidden h-7 w-auto"
+            src="/icon-mark.png"
+            alt=""
+            width={24}
+            height={24}
+            className="h-6 w-6"
           />
-          <Image
-            src="/logo-dark.png"
-            alt="Personal OS"
-            width={140}
-            height={31}
-            className="hidden dark:block h-7 w-auto"
-          />
+          <div>
+            <p className="text-sm font-semibold text-primary">Personal OS</p>
+            <p className="text-xs text-tertiary">Deep Work Mode</p>
+          </div>
         </div>
         <nav className="flex flex-col gap-0.5">
           {NAV_ITEMS.map(item => {

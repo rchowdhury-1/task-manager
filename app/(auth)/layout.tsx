@@ -8,23 +8,18 @@ export default function AuthLayout({
   return (
     <main className="min-h-screen bg-page flex items-center justify-center px-4">
       <div className="w-full max-w-[400px]">
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex items-center justify-center gap-2.5 mb-8">
           <Image
-            src="/logo-light.png"
-            alt="Personal OS"
-            width={220}
-            height={49}
+            src="/icon-mark.png"
+            alt=""
+            width={40}
+            height={40}
             priority
-            className="block dark:hidden h-12 w-auto"
+            className="h-10 w-10"
           />
-          <Image
-            src="/logo-dark.png"
-            alt="Personal OS"
-            width={220}
-            height={49}
-            priority
-            className="hidden dark:block h-12 w-auto"
-          />
+          <span className="text-2xl font-semibold tracking-tight text-primary">
+            Personal OS
+          </span>
         </div>
         {children}
       </div>
