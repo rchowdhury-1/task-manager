@@ -79,10 +79,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           <Image
             src="/icon-mark.svg"
             alt=""
-            width={32}
-            height={32}
+            width={40}
+            height={40}
             priority
-            className="h-8 w-8 text-accent"
+            className="h-9 w-9"
           />
           <span className="text-lg font-semibold tracking-tight text-primary">
             Personal OS

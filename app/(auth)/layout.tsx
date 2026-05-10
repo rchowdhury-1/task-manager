@@ -12,10 +12,10 @@ export default function AuthLayout({
           <Image
             src="/icon-mark.svg"
             alt=""
-            width={40}
-            height={40}
+            width={56}
+            height={56}
             priority
-            className="h-10 w-10 text-accent"
+            className="h-14 w-14"
           />
           <span className="text-2xl font-semibold tracking-tight text-primary">
             Personal OS

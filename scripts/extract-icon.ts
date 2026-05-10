@@ -1,8 +1,8 @@
 import sharp from 'sharp';
 import path from 'path';
 
-// Use the original black SVG for rasterization (not the currentColor version)
-const SOURCE = path.join(process.cwd(), 'design/stitch/logo-personal-os.svg');
+// Use the bold filled SVG (brand reds, no background rect)
+const SOURCE = path.join(process.cwd(), 'public', 'icon-mark.svg');
 
 async function main() {
   // app/icon.png — main favicon, white bg for light browser tabs
