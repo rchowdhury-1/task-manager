@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Personal OS — Constellation (Light)</title>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="230" fill="#fafaf7"/>
+
+  <!-- Connection lines -->
+  <line x1="512" y1="512" x2="512" y2="232" stroke="#c4c4c8" stroke-width="10" stroke-linecap="round"/>
+  <line x1="512" y1="512" x2="792" y2="512" stroke="#c4c4c8" stroke-width="10" stroke-linecap="round"/>
+  <line x1="512" y1="512" x2="512" y2="792" stroke="#c4c4c8" stroke-width="10" stroke-linecap="round"/>
+  <line x1="512" y1="512" x2="232" y2="512" stroke="#c4c4c8" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Satellites -->
+  <circle cx="512" cy="232" r="38" fill="#1a1a1d"/>
+  <circle cx="792" cy="512" r="38" fill="#1a1a1d"/>
+  <circle cx="512" cy="792" r="38" fill="#1a1a1d"/>
+  <circle cx="232" cy="512" r="38" fill="#1a1a1d"/>
+
+  <!-- Gravitational ring -->
+  <circle cx="512" cy="512" r="102" fill="none" stroke="#ef3a36" stroke-width="5" opacity="0.18"/>
+
+  <!-- Core -->
+  <circle cx="512" cy="512" r="76" fill="#ef3a36"/>
+</svg>

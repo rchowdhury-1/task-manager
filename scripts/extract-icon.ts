@@ -5,15 +5,12 @@ import path from 'path';
 const SOURCE = path.join(process.cwd(), 'public', 'icon-mark.svg');
 
 async function main() {
-  // app/icon.png — main favicon, white bg for light browser tabs
+  // app/icon.png — main favicon, transparent bg
   await sharp(SOURCE, { density: 300 })
-    .resize(1024, 1024, {
-      fit: 'contain',
-      background: { r: 255, g: 255, b: 255, alpha: 1 },
-    })
+    .resize(1024, 1024, { fit: 'contain' })
     .png()
     .toFile(path.join(process.cwd(), 'app', 'icon.png'));
-  console.log('✓ app/icon.png (1024x1024, white bg)');
+  console.log('✓ app/icon.png (1024x1024)');
 
   // public/icon-mark.png — transparent fallback for any
   // <Image> usage that can't use SVG
