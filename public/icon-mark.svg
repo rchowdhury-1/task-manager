@@ -6,16 +6,16 @@
   <rect width="1024" height="1024" rx="230" fill="#0a0a0b"/>
 
   <!-- Connection lines -->
-  <line x1="512" y1="512" x2="512" y2="232" stroke="#3a3a40" stroke-width="10" stroke-linecap="round"/>
-  <line x1="512" y1="512" x2="792" y2="512" stroke="#3a3a40" stroke-width="10" stroke-linecap="round"/>
-  <line x1="512" y1="512" x2="512" y2="792" stroke="#3a3a40" stroke-width="10" stroke-linecap="round"/>
-  <line x1="512" y1="512" x2="232" y2="512" stroke="#3a3a40" stroke-width="10" stroke-linecap="round"/>
+  <line x1="512" y1="512" x2="512" y2="232" stroke="#3a3a40" stroke-width="16" stroke-linecap="round"/>
+  <line x1="512" y1="512" x2="792" y2="512" stroke="#3a3a40" stroke-width="16" stroke-linecap="round"/>
+  <line x1="512" y1="512" x2="512" y2="792" stroke="#3a3a40" stroke-width="16" stroke-linecap="round"/>
+  <line x1="512" y1="512" x2="232" y2="512" stroke="#3a3a40" stroke-width="16" stroke-linecap="round"/>
 
   <!-- Satellites -->
-  <circle cx="512" cy="232" r="38" fill="#f5f5f7"/>
-  <circle cx="792" cy="512" r="38" fill="#f5f5f7"/>
-  <circle cx="512" cy="792" r="38" fill="#f5f5f7"/>
-  <circle cx="232" cy="512" r="38" fill="#f5f5f7"/>
+  <circle cx="512" cy="232" r="55" fill="#f5f5f7"/>
+  <circle cx="792" cy="512" r="55" fill="#f5f5f7"/>
+  <circle cx="512" cy="792" r="55" fill="#f5f5f7"/>
+  <circle cx="232" cy="512" r="55" fill="#f5f5f7"/>
 
   <!-- Gravitational ring -->
   <circle cx="512" cy="512" r="102" fill="none" stroke="#ef3a36" stroke-width="5" opacity="0.2"/>
