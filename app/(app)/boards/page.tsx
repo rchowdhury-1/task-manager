@@ -1,10 +1,14 @@
-// NOTE: Card order within each column is determined by status → priority →
-// assignedDay → createdAt (DB ordering). Visual reordering via drag within the
-// same column is not persisted — the next refetch will revert to DB order.
+// NOTE: Card order within each column is determined by status -> priority ->
+// assignedDay -> createdAt (DB ordering). Visual reordering via drag within the
+// same column is not persisted -- the next refetch will revert to DB order.
 // If true manual ordering is needed, add a sort_order/position column in 4d.
+
+// NOTE: Filter tabs only show the 6 system categories. Custom categories
+// created via Lists are not yet surfaced here. This is a known gap.
 
 'use client';
 import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -25,6 +29,7 @@ import { TaskCard } from '@/components/TaskCard';
 import { resolveDropTarget } from '@/lib/utils/board';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LayoutGrid, Filter } from 'lucide-react';
+import { fadeInUp, staggerChildren } from '@/lib/animations';
 import type { Task, Status, Category } from '@/lib/types';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -42,13 +47,22 @@ const CATEGORY_LABELS: Record<Category, string> = {
   learning: 'Learning', uber: 'Uber', faith: 'Faith',
 };
 
+const CATEGORY_DOT_COLORS: Record<Category, string> = {
+  career: 'bg-tag-blue',
+  lms: 'bg-tag-violet',
+  freelance: 'bg-tag-amber',
+  learning: 'bg-tag-green',
+  uber: 'bg-tag-slate',
+  faith: 'bg-tag-rose',
+};
+
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
 function Skeleton() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="h-8 w-32 bg-surface-raised rounded" />
-      <div className="h-8 w-80 bg-surface-raised rounded" />
+      <div className="h-12 w-80 bg-surface-raised rounded" />
       <div className="grid grid-cols-4 gap-4">
         {[0, 1, 2, 3].map(i => (
           <div key={i} className="h-[500px] bg-surface-raised rounded-xl" />
@@ -85,7 +99,7 @@ function DraggableCard({ task, onClick }: { task: Task; onClick: () => void }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function BoardsPage() {
-  useEffect(() => { document.title = 'Boards · Personal OS'; }, []);
+  useEffect(() => { document.title = 'Boards \u00b7 Personal OS'; }, []);
 
   const { data: tasks, isLoading, error, refetch } = useTasks();
   const updateTask = useUpdateTask();
@@ -207,8 +221,16 @@ export default function BoardsPage() {
 
   if (allTasks.length === 0) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-primary">Boards</h1>
+      <div className="space-y-6 max-w-[1280px]">
+        <div>
+          <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-tertiary mb-2">
+            Kanban &middot; Drag to move
+          </p>
+          <h1 className="text-[32px] md:text-[44px] font-semibold leading-[1.02] tracking-display text-primary">
+            Boards{' '}
+            <span className="font-display italic text-accent">in motion.</span>
+          </h1>
+        </div>
         <div className="text-center py-20 space-y-2">
           <LayoutGrid className="w-8 h-8 text-tertiary mx-auto" />
           <p className="text-secondary text-sm">No tasks yet</p>
@@ -224,47 +246,60 @@ export default function BoardsPage() {
 
   return (
     <ErrorBoundary>
-    <div className="space-y-5 max-w-[1200px]">
+    <motion.div
+      variants={staggerChildren}
+      initial="hidden"
+      animate="visible"
+      className="space-y-5 max-w-[1280px]"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-primary">Boards</h1>
-        <span className="text-sm text-secondary">
-          {allTasks.length} task{allTasks.length !== 1 ? 's' : ''} across {COLUMNS.length} columns
-        </span>
-      </div>
+      <motion.div variants={fadeInUp}>
+        <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-tertiary mb-2">
+          Kanban &middot; Drag to move &middot; &#8984;N for new
+        </p>
+        <h1 className="text-[32px] md:text-[44px] font-semibold leading-[1.02] tracking-display text-primary">
+          Boards{' '}
+          <span className="font-display italic text-accent">in motion.</span>
+        </h1>
+      </motion.div>
 
       {/* Filter bar */}
       {presentCategories.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <motion.div variants={fadeInUp} className="inline-flex p-1 bg-surface border border-border rounded-lg">
           <button
             onClick={clearFilters}
             className={`
-              flex items-center gap-1.5 rounded-full px-3 py-1 text-sm border transition-colors
+              inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors
               ${filters.size === 0
-                ? 'bg-accent-muted text-accent border-accent'
-                : 'bg-surface text-secondary border-border hover:border-accent'
+                ? 'bg-page border border-border shadow-sm text-primary'
+                : 'text-secondary hover:text-primary'
               }
             `}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            <span className="w-2 h-2 rounded-full bg-accent" />
             All
+            <span className="font-mono text-[10.5px] text-tertiary">{allTasks.length}</span>
           </button>
           {presentCategories.map(cat => (
             <button
               key={cat}
               onClick={() => toggleFilter(cat)}
               className={`
-                rounded-full px-3 py-1 text-sm border transition-colors
+                inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors
                 ${filters.has(cat)
-                  ? 'bg-accent-muted text-accent border-accent'
-                  : 'bg-surface text-secondary border-border hover:border-accent'
+                  ? 'bg-page border border-border shadow-sm text-primary'
+                  : 'text-secondary hover:text-primary border border-transparent'
                 }
               `}
             >
+              <span className={`w-2 h-2 rounded-full ${CATEGORY_DOT_COLORS[cat]}`} />
               {CATEGORY_LABELS[cat]}
+              <span className="font-mono text-[10.5px] text-tertiary">
+                {allTasks.filter(t => t.category === cat).length}
+              </span>
             </button>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* No match */}
@@ -315,17 +350,18 @@ export default function BoardsPage() {
               onDragCancel={() => setActiveId(null)}
               collisionDetection={rectIntersection}
             >
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <motion.div variants={staggerChildren} className="grid grid-cols-2 lg:grid-cols-4 gap-5">
                 {columns.map(col => (
-                  <ColumnWithCreate
-                    key={col.id}
-                    column={col}
-                    tasks={col.tasks}
-                    onClickTask={openTaskDetail}
-                    onCreate={(title) => handleCreateInColumn(col.id, title)}
-                  />
+                  <motion.div key={col.id} variants={fadeInUp}>
+                    <ColumnWithCreate
+                      column={col}
+                      tasks={col.tasks}
+                      onClickTask={openTaskDetail}
+                      onCreate={(title) => handleCreateInColumn(col.id, title)}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
               <DragOverlay>
                 {activeTask ? (
@@ -336,7 +372,7 @@ export default function BoardsPage() {
           </div>
         </>
       )}
-    </div>
+    </motion.div>
     </ErrorBoundary>
   );
 }
@@ -387,14 +423,14 @@ function MobileColumn({
             onChange={e => setNewTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Escape') { setAdding(false); setNewTitle(''); } }}
             onBlur={submitAdd}
-            placeholder="Task title…"
+            placeholder="Task title\u2026"
             className="w-full px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </form>
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="mt-2 w-full py-2 text-sm text-tertiary border border-dashed border-border rounded-lg hover:text-accent hover:border-accent transition-colors"
+          className="mt-2 w-full py-2 text-sm text-tertiary border border-dashed border-border-strong rounded-lg hover:text-accent hover:border-accent transition-colors"
         >
           + Add Task
         </button>
@@ -439,10 +475,10 @@ function ColumnWithCreate({
       {/* Column header */}
       <div className="flex items-center gap-2 mb-3">
         {column.dot && <span className={`w-2 h-2 rounded-full ${column.dot}`} />}
-        <h3 className="text-xs font-semibold text-secondary tracking-wide">
+        <h3 className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-tertiary">
           {column.label}
         </h3>
-        <span className="text-[10px] font-medium text-secondary bg-surface-raised rounded-full px-1.5 py-0.5">
+        <span className="font-mono text-[10.5px] text-tertiary bg-surface-raised rounded-full px-1.5 py-0.5">
           {tasks.length}
         </span>
       </div>
@@ -477,14 +513,14 @@ function ColumnWithCreate({
               if (e.key === 'Escape') { setAdding(false); setNewTitle(''); }
             }}
             onBlur={submitAdd}
-            placeholder="Task title…"
+            placeholder="Task title\u2026"
             className="w-full px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </form>
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="mt-2 w-full py-2 text-sm text-tertiary border border-dashed border-border rounded-lg hover:text-accent hover:border-accent transition-colors"
+          className="mt-2 w-full py-2 text-sm text-tertiary border border-dashed border-border-strong rounded-lg hover:text-accent hover:border-accent transition-colors"
         >
           + Add Task
         </button>

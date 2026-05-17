@@ -10,6 +10,15 @@ const PRIORITY_COLORS: Record<number, string> = {
   3: '#10B981',
 };
 
+const CATEGORY_BORDER_COLORS: Record<Category, string> = {
+  career: 'var(--color-tag-blue)',
+  lms: 'var(--color-tag-violet)',
+  freelance: 'var(--color-tag-amber)',
+  learning: 'var(--color-tag-green)',
+  uber: 'var(--color-tag-slate)',
+  faith: 'var(--color-tag-rose)',
+};
+
 const CATEGORY_STYLES: Record<Category, { bg: string; text: string; bgDark: string; textDark: string }> = {
   career:    { bg: 'bg-[#FFF7ED]', text: 'text-[#C2410C]', bgDark: 'dark:bg-[#431407]', textDark: 'dark:text-[#FB923C]' },
   lms:       { bg: 'bg-[#EFF6FF]', text: 'text-[#1D4ED8]', bgDark: 'dark:bg-[#172554]', textDark: 'dark:text-[#60A5FA]' },
@@ -49,7 +58,7 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps & { listeners?:
         ref={ref}
         style={{
           ...style,
-          borderLeftColor: PRIORITY_COLORS[task.priority] ?? '#9CA3AF',
+          borderLeftColor: CATEGORY_BORDER_COLORS[task.category] ?? '#9CA3AF',
           opacity: isDragOverlay ? 0.9 : isDone ? 0.6 : 1,
         }}
         onClick={onClick}

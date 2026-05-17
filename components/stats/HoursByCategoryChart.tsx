@@ -50,7 +50,7 @@ export default function HoursByCategoryChart({ data }: Props) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           formatter={(value: any) => [`${value}h`, 'Hours']}
         />
-        <Bar dataKey="hours" fill="#DC2626" radius={[4, 4, 0, 0]} maxBarSize={48} />
+        <Bar dataKey="hours" fill="var(--color-accent, #B70011)" radius={[4, 4, 0, 0]} maxBarSize={48} />
       </BarChart>
     </ResponsiveContainer>
   );
