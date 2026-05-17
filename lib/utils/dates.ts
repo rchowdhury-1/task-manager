@@ -79,3 +79,19 @@ export function addTime(time: string, minutes: number): string {
   const newM = total % 60;
   return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
 }
+
+/** Whether a date string is within the next N days from today */
+export function isWithinNextDays(dateStr: string, n: number): boolean {
+  const target = parseISO(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = dfAddDays(today, n);
+  return target >= today && target <= end;
+}
+
+/** Number of full days since a given date string */
+export function daysSince(dateStr: string): number {
+  const d = parseISO(dateStr);
+  const now = new Date();
+  return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+}
