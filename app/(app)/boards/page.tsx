@@ -12,6 +12,10 @@ import {
   rectIntersection,
   useDroppable,
   useDraggable,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
   type DragStartEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
@@ -87,6 +91,13 @@ export default function BoardsPage() {
   const updateTask = useUpdateTask();
   const createTask = useCreateTask();
   const { setActiveTaskId } = useActiveTask();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor),
+  );
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Set<Category>>(new Set());
@@ -298,6 +309,7 @@ export default function BoardsPage() {
           {/* ── Desktop: Full 4-column kanban with DnD ── */}
           <div className="hidden md:block">
             <DndContext
+              sensors={sensors}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onDragCancel={() => setActiveId(null)}

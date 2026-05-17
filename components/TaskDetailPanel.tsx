@@ -6,6 +6,7 @@ import {
   useCallback,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { useActiveTask } from '@/lib/state/activeTask';
 import { useTask, useUpdateTask, useDeleteTask } from '@/lib/api/hooks';
 import { useSaveIndicator, type SaveState } from '@/lib/hooks/useSaveIndicator';
@@ -116,19 +117,28 @@ export function TaskDetailPanel() {
 
   const panelRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+  const lastLeftOffRef = useRef<HTMLTextAreaElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  // Sync task data to local state when task loads or changes
+  // Sync task data to local state only when the field is NOT focused
+  // This prevents the autosave response from overwriting characters mid-typing
   useEffect(() => {
     if (task) {
-      setTitle(task.title);
-      setLastLeftOff(task.lastLeftOff ?? '');
-      setNotes(task.notes ?? '');
+      if (document.activeElement !== titleRef.current) {
+        setTitle(task.title);
+      }
+      if (document.activeElement !== lastLeftOffRef.current) {
+        setLastLeftOff(task.lastLeftOff ?? '');
+      }
+      if (document.activeElement !== notesRef.current) {
+        setNotes(task.notes ?? '');
+      }
       setNextSteps(task.nextSteps ?? []);
       setAssignedDay(task.assignedDay ?? '');
       setScheduledTime(task.scheduledTime ?? '');
     }
-  }, [task]);
+  }, [task?.id, task?.title, task?.lastLeftOff, task?.notes, task?.nextSteps, task?.assignedDay, task?.scheduledTime]);
 
   // Mount/unmount animation
   useEffect(() => {
@@ -430,8 +440,10 @@ export function TaskDetailPanel() {
                   </h3>
                 </div>
                 <textarea
+                  ref={lastLeftOffRef}
                   value={lastLeftOff}
                   onChange={(e) => handleLastLeftOff(e.target.value)}
+                  onBlur={() => { if (debounceTimers.current['last_left_off']) { clearTimeout(debounceTimers.current['last_left_off']); patchField('last_left_off', lastLeftOff || undefined); } }}
                   placeholder="What were you doing when you last worked on this?"
                   className="w-full min-h-[80px] p-3 text-sm bg-surface-raised border border-border rounded-lg text-primary placeholder:text-tertiary resize-y focus:outline-none focus:ring-2 focus:ring-accent"
                 />
@@ -604,8 +616,10 @@ export function TaskDetailPanel() {
                   </h3>
                 </div>
                 <textarea
+                  ref={notesRef}
                   value={notes}
                   onChange={(e) => handleNotes(e.target.value)}
+                  onBlur={() => { if (debounceTimers.current['notes']) { clearTimeout(debounceTimers.current['notes']); patchField('notes', notes || undefined); } }}
                   placeholder="Click to add detailed notes, links, or context…"
                   className="w-full min-h-[100px] p-3 text-sm bg-surface-raised border border-border rounded-lg text-primary placeholder:text-tertiary resize-y focus:outline-none focus:ring-2 focus:ring-accent"
                 />

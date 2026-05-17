@@ -1,20 +1,26 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { useIsMac } from '@/lib/hooks/usePlatform';
 
-const SHORTCUTS: { key: string; label: string; scope?: string }[] = [
-  { key: '?', label: 'Open this help dialog' },
-  { key: '⌘ J', label: 'Toggle AI Command Bar' },
-  { key: '⌘ K', label: 'Open Command Palette' },
-  { key: 'Esc', label: 'Close panel / modal' },
-  { key: '←', label: 'Previous week', scope: 'Week' },
-  { key: '→', label: 'Next week', scope: 'Week' },
-  { key: 'T', label: 'Go to current week', scope: 'Week' },
-  { key: 'V', label: 'Toggle calendar/stack view', scope: 'Week' },
-];
+function useShortcuts() {
+  const isMac = useIsMac();
+  const mod = isMac ? '⌘' : 'Ctrl+';
+  return [
+    { key: '?', label: 'Open this help dialog' },
+    { key: `${mod}J`, label: 'Toggle AI Command Bar' },
+    { key: `${mod}K`, label: 'Open Command Palette' },
+    { key: 'Esc', label: 'Close panel / modal' },
+    { key: '←', label: 'Previous week', scope: 'Week' },
+    { key: '→', label: 'Next week', scope: 'Week' },
+    { key: 'T', label: 'Go to current week', scope: 'Week' },
+    { key: 'V', label: 'Toggle calendar/stack view', scope: 'Week' },
+  ] as { key: string; label: string; scope?: string }[];
+}
 
 export function KeyboardHelp() {
   const [open, setOpen] = useState(false);
+  const SHORTCUTS = useShortcuts();
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {

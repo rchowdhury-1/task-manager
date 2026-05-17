@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useAICommand } from '@/lib/api/hooks';
+import { useShortcutLabel } from '@/lib/hooks/usePlatform';
 
 // ─── Sparkle Icon ───────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ export function AICommandBar() {
   const [message, setMessage] = useState('');
   const [response, setResponse] = useState<AIResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const shortcutLabel = useShortcutLabel('J');
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -137,8 +139,8 @@ export function AICommandBar() {
           >
             <SparkleIcon className="w-4 h-4 text-accent" />
             <span>AI Command</span>
-            <kbd className="ml-1 text-[11px] text-tertiary border border-border rounded px-1.5 py-0.5 font-mono">
-              ⌘J
+            <kbd className="ml-1 text-[11px] text-tertiary border border-border rounded px-1.5 py-0.5 font-mono min-w-fit">
+              {shortcutLabel}
             </kbd>
           </button>
         </div>
