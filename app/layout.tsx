@@ -28,15 +28,21 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'Personal OS',
+    default: 'Personal OS — Run your life on quiet rails',
     template: '%s · Personal OS',
   },
-  description: 'Focus on what matters. AI-powered personal OS for tasks, habits, and weekly focus.',
+  description: 'A calm, structured home for tasks, habits, deep work, studies, and the errands you keep putting off.',
   openGraph: {
     title: 'Personal OS',
-    description: 'Focus on what matters.',
+    description: 'Run your life on quiet rails.',
     type: 'website',
     siteName: 'Personal OS',
+    images: ['/opengraph-image.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Personal OS',
+    description: 'Run your life on quiet rails.',
   },
 };
 

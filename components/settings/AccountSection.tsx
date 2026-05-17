@@ -6,6 +6,24 @@ import { useMe, useUpdateMe, useLogout } from '@/lib/api/hooks';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { fadeInUp, staggerChildren } from '@/lib/animations';
 
+function TrialStatus({ trialEndsAt }: { trialEndsAt?: string | Date | null }) {
+  if (!trialEndsAt) return null;
+  const end = new Date(trialEndsAt);
+  const daysLeft = Math.max(0, Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  const expired = daysLeft === 0;
+
+  return (
+    <div>
+      <label className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-tertiary block mb-1.5">
+        Trial
+      </label>
+      <p className={`px-3 py-2.5 text-[14px] border border-border rounded-lg ${expired ? 'bg-surface-raised text-secondary' : 'bg-surface text-primary'}`}>
+        {expired ? 'Trial expired' : `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`}
+      </p>
+    </div>
+  );
+}
+
 export function AccountSection() {
   const { data: me, isLoading } = useMe();
   const updateMe = useUpdateMe();
@@ -108,6 +126,8 @@ export function AccountSection() {
                 {me?.email}
               </p>
             </div>
+
+            <TrialStatus trialEndsAt={me?.trialEndsAt} />
           </div>
         </div>
       </motion.div>

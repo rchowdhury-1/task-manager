@@ -25,6 +25,7 @@ export interface User {
   email: string;
   name: string | null;
   createdAt: string;
+  trialEndsAt?: string | null;
 }
 
 export interface Task {

@@ -5,9 +5,24 @@ import { users, categories } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { registerSchema } from "@/lib/validation/auth";
+import { checkRegisterRateLimit } from "@/lib/auth/registerRateLimiter";
 
 export async function POST(req: NextRequest) {
   try {
+    // Signup rate limiting (per IP)
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown";
+
+    const limit = checkRegisterRateLimit(ip);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again later.", retryAfter: limit.retryAfter },
+        { status: 429 },
+      );
+    }
+
     const body = await req.json();
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
@@ -34,12 +49,15 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
+    const trialEndsAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+
     const [user] = await db
       .insert(users)
       .values({
         email: email.toLowerCase(),
         passwordHash,
         name: name ?? null,
+        trialEndsAt,
       })
       .returning({
         id: users.id,

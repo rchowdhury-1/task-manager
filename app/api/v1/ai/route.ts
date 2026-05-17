@@ -9,6 +9,7 @@ import { TOOLS } from '@/lib/ai/tools';
 import { EXECUTORS } from '@/lib/ai/executors';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { buildUserContext } from '@/lib/ai/context';
+import { checkAndIncrementUsage, incrementTokenUsage } from '@/lib/ai/rateLimiter';
 
 const MAX_ITERATIONS = 5;
 
@@ -22,6 +23,20 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     return Response.json(
       { error: 'AI not configured. Set OPENAI_API_KEY.' },
       { status: 500 },
+    );
+  }
+
+  // Per-user daily rate limiting
+  const usage = await checkAndIncrementUsage(userId);
+  if (!usage.allowed) {
+    return Response.json(
+      {
+        error: 'Daily AI limit reached',
+        used: usage.used,
+        limit: usage.limit,
+        message: `You've used ${usage.used} of ${usage.limit} AI prompts today. Limit resets at midnight UTC.`,
+      },
+      { status: 429 },
     );
   }
 
@@ -75,7 +90,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
         // Add assistant message for completeness
         const summary = choice.message.content ?? 'Done';
 
-        // Log AI call
+        // Log AI call + track token usage
         const costUsd = (tokensIn * 0.15 + tokensOut * 0.60) / 1_000_000;
         await db.insert(aiCalls).values({
           userId,
@@ -83,6 +98,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
           tokensOut,
           costUsd: String(costUsd),
         });
+        await incrementTokenUsage(userId, tokensUsed);
 
         return Response.json({
           summary,
@@ -151,6 +167,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       tokensOut,
       costUsd: String(costUsd),
     });
+    await incrementTokenUsage(userId, tokensUsed);
 
     return Response.json({
       summary: 'Completed with maximum iterations reached.',

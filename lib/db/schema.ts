@@ -12,6 +12,7 @@ import {
   numeric,
   index,
   unique,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -22,8 +23,27 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 255 }).unique().notNull(),
   passwordHash: text("password_hash").notNull(),
   name: varchar("name", { length: 120 }),
+  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`),
 });
+
+// ─── ai_usage (per-user daily rate limiting) ────────────────────────────────
+
+export const aiUsage = pgTable(
+  "ai_usage",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    promptCount: integer("prompt_count").default(0).notNull(),
+    tokenCount: integer("token_count").default(0).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).default(sql`now()`).notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.day] }),
+  })
+);
 
 // ─── categories ──────────────────────────────────────────────────────────────
 

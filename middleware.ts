@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = ['/login', '/register'];
+const PUBLIC_PATHS = ['/login', '/register', '/', '/terms', '/privacy'];
+
+// Paths accessible to everyone, regardless of auth
+const ALWAYS_PUBLIC = ['/terms', '/privacy'];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const hasToken = req.cookies.has('pos-token');
 
-  // Logged-in user visiting auth pages → redirect to /today
+  // Always-public pages: no redirect
+  if (ALWAYS_PUBLIC.includes(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Logged-in user on auth/landing pages → redirect to /today
   if (PUBLIC_PATHS.includes(pathname) && hasToken) {
     return NextResponse.redirect(new URL('/today', req.url));
   }
