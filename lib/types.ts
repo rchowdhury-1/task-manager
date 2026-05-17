@@ -6,6 +6,18 @@ export type Status = 'backlog' | 'this_week' | 'in_progress' | 'done';
 export type DayFocus = 'job_hunt' | 'lms' | 'freelance' | 'learning' | 'rest' | 'flex';
 export type Section = 'faith' | 'body' | 'growth';
 
+// ─── Category record (DB-backed, used from Phase 4+) ────────────────────────
+
+export interface CategoryRecord {
+  id: string;
+  slug: string;
+  label: string;
+  colour: string | null;
+  icon: string | null;
+  isSystem: boolean;
+  sortOrder: number;
+}
+
 // ─── API response shapes (match Drizzle camelCase output) ────────────────────
 
 export interface User {

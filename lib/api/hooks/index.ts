@@ -6,3 +6,4 @@ export * from './useRecurring';
 export * from './useToday';
 export * from './useAI';
 export * from './useStats';
+export * from './useCategories';

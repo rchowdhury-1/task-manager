@@ -8,4 +8,5 @@ export const queryKeys = {
   dayRules: () => ['day-rules'] as const,
   recurring: () => ['recurring'] as const,
   today: (date: string) => ['today', date] as const,
+  categories: () => ['categories'] as const,
 };

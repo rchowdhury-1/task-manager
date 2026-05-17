@@ -25,6 +25,28 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`),
 });
 
+// ─── categories ──────────────────────────────────────────────────────────────
+
+export const categories = pgTable(
+  "categories",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    label: text("label").notNull(),
+    colour: text("colour"),
+    icon: text("icon"),
+    isSystem: boolean("is_system").default(false).notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`),
+  },
+  (t) => ({
+    userSlugUnique: unique("categories_user_slug_unique").on(t.userId, t.slug),
+  })
+);
+
 // ─── tasks ────────────────────────────────────────────────────────────────────
 
 export const tasks = pgTable(
