@@ -1,11 +1,14 @@
 'use client';
 import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useDayRules, useUpdateDayRule } from '@/lib/api/hooks';
 import { DAY_FOCUS_STYLES } from '@/lib/utils/styles';
+import { fadeInUp, staggerChildren } from '@/lib/animations';
 import type { DayFocus } from '@/lib/types';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const FOCUS_OPTIONS: { value: DayFocus; label: string }[] = [
   { value: 'job_hunt', label: 'Job Hunt' },
   { value: 'lms', label: 'LMS Build' },
@@ -25,23 +28,31 @@ export function DayRulesSection() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="space-y-3 animate-pulse">
         {Array.from({ length: 7 }, (_, i) => (
-          <div key={i} className="h-40 bg-surface-raised rounded-xl animate-pulse" />
+          <div key={i} className="h-16 bg-surface-raised rounded-xl" />
         ))}
       </div>
     );
   }
 
-  // Build map dayOfWeek → rule (1=Mon...0=Sun in JS, but DB stores 1-7 Mon-Sun)
-  // Actually check what the DB uses. dayOfWeek is an int — let's map by it.
   const ruleMap = new Map((dayRules ?? []).map(r => [r.dayOfWeek, r]));
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-[18px] md:text-[22px] font-semibold text-primary">
+            Day Rules
+          </h2>
+          <p className="text-[13px] text-secondary mt-0.5">
+            Configure focus areas and daily hour limits.
+          </p>
+        </div>
+      </div>
+
+      <motion.div variants={staggerChildren} initial="hidden" animate="visible" className="space-y-2.5">
         {DAY_NAMES.map((name, i) => {
-          // dayOfWeek: 1=Mon...7=Sun
           const dow = i + 1;
           const rule = ruleMap.get(dow);
           const focusArea: DayFocus = rule?.focusArea ?? 'flex';
@@ -49,10 +60,16 @@ export function DayRulesSection() {
           const style = DAY_FOCUS_STYLES[focusArea];
 
           return (
-            <div key={dow} className="bg-surface border border-border rounded-xl p-4 space-y-3">
-              {/* Focus badge */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-primary">{name}</h3>
+            <motion.div
+              key={dow}
+              variants={fadeInUp}
+              className="bg-surface border border-border rounded-xl p-4 md:p-5 grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_auto] gap-3 sm:gap-5 items-center"
+            >
+              {/* Day name */}
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono text-[12px] font-medium text-primary w-[44px]">
+                  {DAY_SHORT[i]}
+                </span>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${style.bg} ${style.text}`}>
                   {style.label}
                 </span>
@@ -60,7 +77,7 @@ export function DayRulesSection() {
 
               {/* Focus area dropdown */}
               <div>
-                <label className="text-[10px] font-semibold text-secondary uppercase tracking-wider block mb-1">
+                <label className="font-mono text-[10px] tracking-[0.12em] uppercase text-tertiary block mb-1.5">
                   Focus Area
                 </label>
                 <select
@@ -72,7 +89,7 @@ export function DayRulesSection() {
                       max_focus_hours: maxHours,
                     });
                   }}
-                  className="w-full px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full px-3 py-2 text-[13px] bg-surface border border-border rounded-lg text-primary appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   {FOCUS_OPTIONS.map(o => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -82,11 +99,11 @@ export function DayRulesSection() {
 
               {/* Max hours slider */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[10px] font-semibold text-secondary uppercase tracking-wider">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="font-mono text-[10px] tracking-[0.12em] uppercase text-tertiary">
                     Max Hours
                   </label>
-                  <span className="text-xs font-medium text-primary bg-surface-raised rounded px-1.5 py-0.5">
+                  <span className="font-mono text-[11px] font-medium text-primary bg-surface-raised rounded-md px-2 py-0.5">
                     {maxHours}h
                   </span>
                 </div>
@@ -107,10 +124,20 @@ export function DayRulesSection() {
                   className="w-full h-1.5 bg-surface-raised rounded-full appearance-none cursor-pointer accent-accent"
                 />
               </div>
-            </div>
+
+              {/* Hours visual (desktop only) */}
+              <div className="hidden sm:block w-12">
+                <div className="h-1.5 bg-surface-raised rounded-full">
+                  <div
+                    className="h-full bg-accent rounded-full transition-all"
+                    style={{ width: `${(maxHours / 12) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }

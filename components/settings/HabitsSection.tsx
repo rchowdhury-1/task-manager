@@ -1,15 +1,18 @@
 'use client';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHabits, useCreateHabit, useUpdateHabit, useDeleteHabit } from '@/lib/api/hooks';
+import { fadeInUp, staggerChildren } from '@/lib/animations';
 import type { Habit, Section } from '@/lib/types';
 
 const SECTION_ORDER: Section[] = ['faith', 'body', 'growth'];
 const SECTION_LABELS: Record<Section, string> = { faith: 'Faith', body: 'Body', growth: 'Growth' };
 const SECTION_COLORS: Record<Section, string> = {
-  faith: 'bg-amber-500',
-  body: 'bg-green-500',
-  growth: 'bg-blue-500',
+  faith: 'bg-tag-rose',
+  body: 'bg-tag-green',
+  growth: 'bg-tag-blue',
 };
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -52,23 +55,22 @@ function NewHabitForm({ onClose }: { onClose: () => void }) {
     );
   };
 
-  // Map display index to JS day-of-week (Mon=1, Tue=2, ...Sat=6, Sun=0)
   const displayOrder = [1, 2, 3, 4, 5, 6, 0];
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-lg p-4 space-y-3">
+    <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-xl p-5 space-y-4">
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Habit name…"
+        placeholder="Habit name\u2026"
         autoFocus
-        className="w-full px-3 py-2 text-sm bg-surface border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
+        className="w-full px-3 py-2.5 text-[14px] bg-surface border border-border rounded-lg text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
       />
       <div className="flex flex-wrap gap-3">
         <select
           value={section}
           onChange={(e) => setSection(e.target.value as Section)}
-          className="px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+          className="px-3 py-2 text-[13px] bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-2 focus:ring-accent"
         >
           {SECTION_ORDER.map(s => (
             <option key={s} value={s}>{SECTION_LABELS[s]}</option>
@@ -77,7 +79,7 @@ function NewHabitForm({ onClose }: { onClose: () => void }) {
         <select
           value={timeOfDay}
           onChange={(e) => setTimeOfDay(e.target.value)}
-          className="px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+          className="px-3 py-2 text-[13px] bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-2 focus:ring-accent"
         >
           {TIME_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -90,7 +92,7 @@ function NewHabitForm({ onClose }: { onClose: () => void }) {
             key={dow}
             type="button"
             onClick={() => toggleDay(dow)}
-            className={`w-8 h-8 rounded text-xs font-semibold transition-colors ${
+            className={`w-9 h-9 rounded-lg text-[12px] font-semibold transition-colors ${
               daysOfWeek.includes(dow)
                 ? 'bg-accent text-white'
                 : 'bg-surface-raised text-secondary hover:text-primary'
@@ -100,18 +102,18 @@ function NewHabitForm({ onClose }: { onClose: () => void }) {
           </button>
         ))}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-1">
         <button
           type="submit"
           disabled={!name.trim() || createHabit.isPending}
-          className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg disabled:opacity-50 hover:bg-accent/90 transition-colors"
+          className="px-4 py-2.5 text-[13px] font-medium bg-accent text-white rounded-lg disabled:opacity-50 hover:bg-accent-hover transition-colors"
         >
-          {createHabit.isPending ? 'Saving…' : 'Save'}
+          {createHabit.isPending ? 'Saving\u2026' : 'Save'}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 text-sm text-secondary hover:text-primary transition-colors"
+          className="px-4 py-2.5 text-[13px] text-secondary hover:text-primary transition-colors"
         >
           Cancel
         </button>
@@ -122,7 +124,7 @@ function NewHabitForm({ onClose }: { onClose: () => void }) {
 
 // ─── Habit Row ──────────────────────────────────────────────────────────────
 
-function HabitRow({ habit }: { habit: Habit }) {
+function SettingsHabitRow({ habit }: { habit: Habit }) {
   const updateHabit = useUpdateHabit();
   const deleteHabit = useDeleteHabit();
   const [editing, setEditing] = useState(false);
@@ -170,18 +172,18 @@ function HabitRow({ habit }: { habit: Habit }) {
 
   if (editing) {
     return (
-      <div className="bg-surface border border-border rounded-lg p-3 space-y-2">
+      <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
         <input
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
           autoFocus
-          className="w-full px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+          className="w-full px-3 py-2 text-[13px] bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-2 focus:ring-accent"
         />
         <div className="flex gap-2">
           <select
             value={editSection}
             onChange={(e) => setEditSection(e.target.value as Section)}
-            className="px-2 py-1 text-sm bg-surface border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+            className="px-3 py-2 text-[13px] bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-2 focus:ring-accent"
           >
             {SECTION_ORDER.map(s => (
               <option key={s} value={s}>{SECTION_LABELS[s]}</option>
@@ -190,7 +192,7 @@ function HabitRow({ habit }: { habit: Habit }) {
           <select
             value={editTimeOfDay}
             onChange={(e) => setEditTimeOfDay(e.target.value)}
-            className="px-2 py-1 text-sm bg-surface border border-border rounded-md text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+            className="px-3 py-2 text-[13px] bg-surface border border-border rounded-lg text-primary focus:outline-none focus:ring-2 focus:ring-accent"
           >
             {TIME_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -201,13 +203,13 @@ function HabitRow({ habit }: { habit: Habit }) {
           <button
             onClick={handleSaveEdit}
             disabled={updateHabit.isPending}
-            className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-md disabled:opacity-50"
+            className="px-3.5 py-2 text-[12.5px] font-medium bg-accent text-white rounded-lg disabled:opacity-50 hover:bg-accent-hover transition-colors"
           >
             Save
           </button>
           <button
             onClick={() => setEditing(false)}
-            className="px-3 py-1.5 text-xs text-secondary hover:text-primary"
+            className="px-3.5 py-2 text-[12.5px] text-secondary hover:text-primary transition-colors"
           >
             Cancel
           </button>
@@ -217,16 +219,16 @@ function HabitRow({ habit }: { habit: Habit }) {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-3 flex items-center gap-3 group">
+    <div className="bg-surface border border-border rounded-xl px-4 py-3.5 flex items-center gap-3 group">
       {/* Section dot */}
       <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${SECTION_COLORS[habit.section]}`} />
 
       {/* Name + time */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-primary truncate">{habit.name}</p>
-        <p className="text-[10px] text-tertiary capitalize">
+        <p className="text-[13.5px] font-medium text-primary truncate">{habit.name}</p>
+        <p className="font-mono text-[10.5px] text-tertiary capitalize">
           {SECTION_LABELS[habit.section]}
-          {habit.timeOfDay ? ` · ${habit.timeOfDay}` : ''}
+          {habit.timeOfDay ? ` \u00b7 ${habit.timeOfDay}` : ''}
         </p>
       </div>
 
@@ -236,7 +238,7 @@ function HabitRow({ habit }: { habit: Habit }) {
           <button
             key={dow}
             onClick={() => toggleDay(dow)}
-            className={`w-6 h-6 rounded text-[10px] font-semibold transition-colors ${
+            className={`w-7 h-7 rounded-md text-[10px] font-semibold transition-colors ${
               habit.daysOfWeek.includes(dow)
                 ? 'bg-accent text-white'
                 : 'bg-surface-raised text-tertiary hover:text-secondary'
@@ -256,7 +258,7 @@ function HabitRow({ habit }: { habit: Habit }) {
             setEditTimeOfDay(habit.timeOfDay ?? 'anytime');
             setEditing(true);
           }}
-          className="p-1.5 rounded text-secondary hover:text-primary hover:bg-surface-raised transition-colors"
+          className="p-2 rounded-lg text-secondary hover:text-primary hover:bg-surface-raised transition-colors"
           aria-label="Edit habit"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -265,7 +267,7 @@ function HabitRow({ habit }: { habit: Habit }) {
         </button>
         <button
           onClick={handleDelete}
-          className="p-1.5 rounded text-secondary hover:text-p1 hover:bg-p1/10 transition-colors"
+          className="p-2 rounded-lg text-secondary hover:text-accent hover:bg-accent/10 transition-colors"
           aria-label="Delete habit"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -287,7 +289,7 @@ export function HabitsSection() {
     return (
       <div className="space-y-3 animate-pulse">
         {[0, 1, 2].map(i => (
-          <div key={i} className="h-16 bg-surface-raised rounded-lg" />
+          <div key={i} className="h-16 bg-surface-raised rounded-xl" />
         ))}
       </div>
     );
@@ -295,7 +297,6 @@ export function HabitsSection() {
 
   const allHabits = habits ?? [];
 
-  // Group by section
   const grouped = SECTION_ORDER
     .map(s => ({
       section: s,
@@ -305,13 +306,21 @@ export function HabitsSection() {
 
   return (
     <div className="space-y-6">
-      {/* Add habit button */}
-      <div className="flex justify-end">
+      {/* Header + Add */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-[18px] md:text-[22px] font-semibold text-primary">
+            Habits
+          </h2>
+          <p className="text-[13px] text-secondary mt-0.5">
+            Manage your daily habits and routines.
+          </p>
+        </div>
         <button
           onClick={() => setShowForm(true)}
-          className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
         >
-          + Add Habit
+          <Plus size={14} /> Add Habit
         </button>
       </div>
 
@@ -320,24 +329,30 @@ export function HabitsSection() {
 
       {/* Grouped habits */}
       {grouped.length === 0 && !showForm && (
-        <div className="text-center py-12">
-          <p className="text-sm text-tertiary">No habits yet</p>
-          <p className="text-xs text-tertiary mt-1">Click "+ Add Habit" to create one</p>
+        <div className="border border-dashed border-border-strong rounded-2xl px-8 py-14 text-center">
+          <p className="font-display italic text-[22px] text-secondary leading-snug mb-2">
+            No habits yet.
+          </p>
+          <p className="text-[13px] text-tertiary">
+            Click &ldquo;Add Habit&rdquo; to create your first routine.
+          </p>
         </div>
       )}
 
-      {grouped.map(({ section, habits: sectionHabits }) => (
-        <div key={section}>
-          <h3 className="text-xs font-semibold text-secondary uppercase tracking-widest border-b border-border pb-2 mb-3">
-            {SECTION_LABELS[section]}
-          </h3>
-          <div className="space-y-2">
-            {sectionHabits.map(h => (
-              <HabitRow key={h.id} habit={h} />
-            ))}
-          </div>
-        </div>
-      ))}
+      <motion.div variants={staggerChildren} initial="hidden" animate="visible" className="space-y-6">
+        {grouped.map(({ section, habits: sectionHabits }) => (
+          <motion.div key={section} variants={fadeInUp}>
+            <h3 className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-tertiary pb-2.5 mb-3 border-b border-border">
+              {SECTION_LABELS[section]}
+            </h3>
+            <div className="space-y-2">
+              {sectionHabits.map(h => (
+                <SettingsHabitRow key={h.id} habit={h} />
+              ))}
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
     </div>
   );
 }

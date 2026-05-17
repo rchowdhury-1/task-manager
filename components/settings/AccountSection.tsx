@@ -1,8 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useMe, useUpdateMe, useLogout } from '@/lib/api/hooks';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { fadeInUp, staggerChildren } from '@/lib/animations';
 
 export function AccountSection() {
   const { data: me, isLoading } = useMe();
@@ -32,18 +34,33 @@ export function AccountSection() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-20 bg-surface-raised rounded-lg" />
-        <div className="h-12 bg-surface-raised rounded-lg" />
-        <div className="h-12 bg-surface-raised rounded-lg" />
+      <div className="space-y-4 animate-pulse max-w-lg">
+        <div className="h-32 bg-surface-raised rounded-xl" />
+        <div className="h-20 bg-surface-raised rounded-xl" />
+        <div className="h-12 bg-surface-raised rounded-xl" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-lg">
+    <motion.div
+      variants={staggerChildren}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6 max-w-lg"
+    >
+      {/* Section header */}
+      <motion.div variants={fadeInUp}>
+        <h2 className="text-[18px] md:text-[22px] font-semibold text-primary">
+          Account
+        </h2>
+        <p className="text-[13px] text-secondary mt-0.5">
+          Your profile, preferences, and sign out.
+        </p>
+      </motion.div>
+
       {/* Profile card */}
-      <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
+      <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-xl p-5 md:p-6 space-y-5">
         <div className="flex flex-col sm:flex-row items-start gap-4">
           {/* Avatar */}
           <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-lg font-semibold shrink-0">
@@ -53,9 +70,9 @@ export function AccountSection() {
           </div>
 
           {/* Name + Email */}
-          <div className="w-full flex-1 space-y-3">
+          <div className="w-full flex-1 space-y-4">
             <div>
-              <label className="text-[10px] font-semibold text-secondary uppercase tracking-wider block mb-1">
+              <label className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-tertiary block mb-1.5">
                 Full Name
               </label>
               <div className="flex items-center gap-2">
@@ -69,55 +86,57 @@ export function AccountSection() {
                     if (e.key === 'Enter') handleSaveName();
                   }}
                   placeholder="Your name"
-                  className="flex-1 px-3 py-2 text-sm bg-surface border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="flex-1 px-3 py-2.5 text-[14px] bg-surface border border-border rounded-lg text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
                 />
                 {dirty && (
                   <button
                     onClick={handleSaveName}
                     disabled={updateMe.isPending}
-                    className="px-3 py-2 text-xs font-medium bg-accent text-white rounded-md disabled:opacity-50 hover:bg-accent/90 transition-colors"
+                    className="px-3.5 py-2.5 text-[12.5px] font-medium bg-accent text-white rounded-lg disabled:opacity-50 hover:bg-accent-hover transition-colors"
                   >
-                    {updateMe.isPending ? 'Saving…' : 'Save'}
+                    {updateMe.isPending ? 'Saving\u2026' : 'Save'}
                   </button>
                 )}
               </div>
             </div>
 
             <div>
-              <label className="text-[10px] font-semibold text-secondary uppercase tracking-wider block mb-1">
+              <label className="font-mono text-[10.5px] tracking-[0.12em] uppercase text-tertiary block mb-1.5">
                 Email Address
               </label>
-              <p className="px-3 py-2 text-sm bg-surface-raised border border-border rounded-md text-secondary">
+              <p className="px-3 py-2.5 text-[14px] bg-surface-raised border border-border rounded-lg text-secondary">
                 {me?.email}
               </p>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Preferences */}
-      <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
-        <h3 className="text-base font-semibold text-primary">Preferences</h3>
+      <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-xl p-5 md:p-6 space-y-4">
+        <h3 className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-tertiary">
+          Preferences
+        </h3>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between py-1">
           <div>
-            <p className="text-sm font-medium text-primary">Theme</p>
-            <p className="text-xs text-tertiary">Toggle between light and dark mode.</p>
+            <p className="text-[14px] font-medium text-primary">Theme</p>
+            <p className="text-[12.5px] text-tertiary mt-0.5">Toggle between light and dark mode.</p>
           </div>
           <ThemeToggle />
         </div>
-      </div>
+      </motion.div>
 
       {/* Sign out */}
-      <div className="border-t border-border pt-4">
+      <motion.div variants={fadeInUp} className="border-t border-border pt-5">
         <button
           onClick={() => logout.mutate()}
           disabled={logout.isPending}
-          className="w-full sm:w-auto px-5 py-2.5 text-sm font-medium bg-p1 text-white rounded-lg hover:bg-p1/90 transition-colors disabled:opacity-50"
+          className="px-5 py-2.5 text-[13px] font-medium border border-border text-secondary rounded-lg hover:text-accent hover:border-accent transition-colors disabled:opacity-50"
         >
-          {logout.isPending ? 'Signing out…' : 'Log Out'}
+          {logout.isPending ? 'Signing out\u2026' : 'Log Out'}
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
