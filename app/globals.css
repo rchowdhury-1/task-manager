@@ -3,11 +3,29 @@
 @tailwind utilities;
 
 /* Prevent horizontal scrollbar on mobile — defence-in-depth.
-   Both html and body needed: iOS Safari treats them independently. */
+   Both html and body needed: iOS Safari treats them independently.
+   Hide vertical scrollbar for cleaner look while preserving scroll. */
 html,
 body {
   overflow-x: hidden;
   width: 100%;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* WebKit: Chrome, Safari, modern Edge */
+}
+
+@layer utilities {
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Prevent iOS Safari zoom on input focus.

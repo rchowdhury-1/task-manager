@@ -219,7 +219,7 @@ function UnscheduledStrip({
                   hoursUsed={totalMinutes / 60}
                   hoursCap={rule?.maxFocusHours ?? 8}
                 />
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+                <div className="space-y-1 max-h-32 overflow-y-auto hide-scrollbar">
                   {tasks.map(task => (
                     <TaskBlock
                       key={task.id}

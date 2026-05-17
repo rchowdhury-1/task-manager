@@ -192,7 +192,7 @@ export function CommandPalette({
         )}
 
         {/* Items */}
-        <div ref={listRef} className="overflow-y-auto flex-1 py-2">
+        <div ref={listRef} className="overflow-y-auto hide-scrollbar flex-1 py-2">
           {Object.entries(sections).map(([section, items]) => (
             <div key={section}>
               <p className="text-[11px] font-semibold text-tertiary uppercase tracking-wide px-4 py-1.5">

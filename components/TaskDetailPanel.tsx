@@ -360,7 +360,7 @@ export function TaskDetailPanel() {
             </div>
 
             {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+            <div className="flex-1 overflow-y-auto hide-scrollbar px-5 py-4 space-y-6">
               {/* Title */}
               <input
                 ref={titleRef}

@@ -201,7 +201,7 @@ function HabitConsistencyBars({
   const sorted = [...data].sort((a, b) => b.percentage - a.percentage);
 
   return (
-    <div className="space-y-2.5 max-h-[250px] overflow-y-auto">
+    <div className="space-y-2.5 max-h-[250px] overflow-y-auto hide-scrollbar">
       {sorted.map((h, i) => (
         <div key={i} className="space-y-1">
           <div className="flex items-center justify-between">
