@@ -187,7 +187,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-page">
+    <div className="min-h-screen bg-page overflow-x-hidden">
       {/* Top header bar */}
       <header className="fixed top-0 left-0 right-0 z-40 h-[60px] bg-surface border-b border-border flex items-center px-4 md:px-8">
         {/* Left: Logo + wordmark */}

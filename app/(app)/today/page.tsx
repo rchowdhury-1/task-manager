@@ -327,20 +327,20 @@ export default function TodayPage() {
         </motion.div>
 
         {/* ── Habits Column ────────────────────────────────────────── */}
-        <motion.div variants={staggerChildren} className="space-y-4">
-          <motion.h2
-            variants={fadeInUp}
-            className="font-mono text-[11px] tracking-[0.12em] uppercase text-secondary"
-          >
+        <motion.aside
+          variants={fadeInUp}
+          className="bg-surface border border-border rounded-xl p-5 md:p-6"
+        >
+          <h2 className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-secondary mb-4">
             Habits
-          </motion.h2>
+          </h2>
 
           {habitsBySection.length === 0 ? (
-            <motion.div variants={fadeInUp} className="text-center py-10 space-y-2">
+            <div className="text-center py-10 space-y-2">
               <Sparkles className="w-6 h-6 text-tertiary mx-auto" />
               <p className="text-sm text-tertiary">No habits yet</p>
               <p className="text-xs text-tertiary">Add some in Settings to start tracking.</p>
-            </motion.div>
+            </div>
           ) : (
             <>
               {/* Mobile: 2-col pill grid */}
@@ -379,10 +379,12 @@ export default function TodayPage() {
               </div>
 
               {/* Streak callout */}
-              <StreakCallout streak={maxStreak} />
+              <div className="mt-4">
+                <StreakCallout streak={maxStreak} />
+              </div>
             </>
           )}
-        </motion.div>
+        </motion.aside>
       </div>
     </motion.div>
     </ErrorBoundary>
