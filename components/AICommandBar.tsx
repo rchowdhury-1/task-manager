@@ -132,7 +132,7 @@ export function AICommandBar() {
     return (
       <>
         {/* Desktop pill */}
-        <div className="hidden md:flex fixed bottom-0 left-[170px] right-0 justify-center pb-4 pointer-events-none z-30">
+        <div className="hidden md:flex fixed bottom-0 left-0 right-0 justify-center pb-4 pointer-events-none z-30">
           <button
             onClick={open}
             className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 bg-surface border border-border rounded-full shadow-md hover:shadow-lg hover:border-accent transition-all text-sm font-medium text-secondary hover:text-primary"
@@ -171,7 +171,7 @@ export function AICommandBar() {
       />
 
       {/* Desktop expanded bar */}
-      <div className="hidden md:flex fixed bottom-0 left-[170px] right-0 justify-center pb-4 pointer-events-none z-50">
+      <div className="hidden md:flex fixed bottom-0 left-0 right-0 justify-center pb-4 pointer-events-none z-50">
         <div
           ref={panelRef}
           className="pointer-events-auto w-full max-w-[600px] bg-surface border border-border rounded-2xl shadow-xl overflow-hidden"
