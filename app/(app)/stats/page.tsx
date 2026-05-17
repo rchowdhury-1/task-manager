@@ -109,9 +109,9 @@ export default function StatsPage() {
         {/* Editorial headline */}
         <motion.div variants={fadeInUp}>
           <h1 className="text-[32px] md:text-[44px] font-semibold leading-[1.02] tracking-display text-primary">
-            You shipped{' '}
+            You completed{' '}
             <span className="font-display italic text-accent">
-              {summary.tasks_completed} things.
+              {summary.tasks_completed} tasks.
             </span>
           </h1>
         </motion.div>

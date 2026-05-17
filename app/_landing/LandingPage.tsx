@@ -57,7 +57,7 @@ function MarketingNav() {
             href="/register"
             className="h-9 px-4 rounded-lg bg-accent text-white text-[13.5px] font-medium inline-flex items-center gap-1.5 hover:bg-accent-hover transition-colors"
           >
-            Get the build <ArrowRight size={14} />
+            Get started <ArrowRight size={14} />
           </Link>
         </div>
       </div>
@@ -99,9 +99,9 @@ function Hero() {
           variants={fadeInUp}
           className="text-[clamp(48px,9vw,120px)] font-semibold leading-[0.96] tracking-display text-primary"
         >
-          Run your life
+          Your busy life.
           <br />
-          on <span className="font-display italic text-accent font-normal">quiet rails.</span>
+          <span className="font-display italic text-accent font-normal">Finally organised.</span>
         </motion.h1>
 
         {/* Subheadline */}
@@ -109,9 +109,9 @@ function Hero() {
           variants={fadeInUp}
           className="mt-8 mx-auto max-w-[620px] text-[17px] md:text-[19px] leading-relaxed text-secondary"
         >
-          Personal OS is a calm, structured home for everything on your plate —
-          tasks, habits, deep work, studies, and the errands you keep putting off.
-          Designed for people balancing work and life, not optimizing themselves to death.
+          Stop juggling apps, notebooks, and mental notes. Personal OS holds your tasks,
+          habits, schedule, and goals in one calm view — so you can stop managing your
+          life and start living it.
         </motion.p>
 
         {/* CTAs */}
@@ -121,13 +121,13 @@ function Hero() {
             className="h-12 px-6 rounded-[10px] bg-accent text-white text-[15px] font-medium inline-flex items-center gap-2 hover:bg-accent-hover transition-colors"
             style={{ boxShadow: '0 10px 24px -8px color-mix(in oklab, var(--color-accent) 60%, transparent)' }}
           >
-            Start your build <ArrowRight size={16} />
+            Get started <ArrowRight size={16} />
           </Link>
           <a
             href="#features"
             className="h-12 px-5 rounded-[10px] bg-surface border border-border-strong text-primary text-[15px] font-medium inline-flex items-center gap-2 hover:bg-surface-raised transition-colors"
           >
-            <Play size={12} /> See it work
+            <Play size={12} /> See how it works
           </a>
         </motion.div>
 
@@ -355,7 +355,7 @@ function Closer() {
               href="/register"
               className="h-12 px-6 rounded-[10px] bg-primary text-page text-[15px] font-medium inline-flex items-center gap-2 hover:opacity-90 transition-opacity"
             >
-              Request an invite <ArrowRight size={16} />
+              Get early access <ArrowRight size={16} />
             </Link>
           </motion.div>
         </div>

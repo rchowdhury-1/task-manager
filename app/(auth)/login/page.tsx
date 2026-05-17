@@ -66,7 +66,7 @@ export default function LoginPage() {
 
       {/* Editorial heading */}
       <h1 className="font-display text-[28px] md:text-[36px] leading-[1.05] tracking-tight text-primary text-center">
-        Sign in to <span className="italic text-accent">your build.</span>
+        Sign in to <span className="italic text-accent">your day.</span>
       </h1>
 
       <p className="text-[14px] text-secondary text-center mt-2 mb-8">
@@ -124,7 +124,7 @@ export default function LoginPage() {
 
       <p className="text-[13px] text-secondary text-center mt-5">
         New here?{' '}
-        <Link href="/register" className="text-accent hover:underline">Start your build</Link>
+        <Link href="/register" className="text-accent hover:underline">Create an account</Link>
       </p>
     </motion.div>
   );

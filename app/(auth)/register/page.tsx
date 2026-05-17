@@ -62,12 +62,12 @@ export default function RegisterPage() {
     >
       {/* Eyebrow */}
       <p className="font-mono text-[10.5px] tracking-[0.14em] uppercase text-tertiary text-center mb-3">
-        Start your build
+        Get started
       </p>
 
       {/* Editorial heading */}
       <h1 className="font-display text-[28px] md:text-[36px] leading-[1.05] tracking-tight text-primary text-center">
-        Start your <span className="italic text-accent">calm OS.</span>
+        Start your <span className="italic text-accent">daily rhythm.</span>
       </h1>
 
       <p className="text-[14px] text-secondary text-center mt-2 mb-8">
@@ -140,7 +140,7 @@ export default function RegisterPage() {
       </form>
 
       <p className="text-[13px] text-secondary text-center mt-5">
-        Already have a build?{' '}
+        Already have an account?{' '}
         <Link href="/login" className="text-accent hover:underline">Sign in</Link>
       </p>
     </motion.div>
