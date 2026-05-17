@@ -312,18 +312,21 @@ export function TaskDetailPanel() {
       {/* Backdrop */}
       <div
         className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-250 ${
-          visible ? 'opacity-100' : 'opacity-0'
+          visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={close}
       />
 
-      {/* Panel */}
-      <div
-        ref={panelRef}
-        className={`fixed right-0 top-0 h-full w-full md:w-[440px] z-50 bg-surface border-l border-border flex flex-col transition-transform duration-250 ease-out ${
-          visible ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
+      {/* Panel — overflow-hidden wrapper prevents translate-x-full from widening the document */}
+      <div className={`fixed right-0 top-0 h-full w-full md:w-[440px] z-50 overflow-hidden ${
+        visible ? '' : 'pointer-events-none'
+      }`}>
+        <div
+          ref={panelRef}
+          className={`h-full w-full bg-surface border-l border-border flex flex-col transition-transform duration-250 ease-out ${
+            visible ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
         {isLoading || !task ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
@@ -665,6 +668,7 @@ export function TaskDetailPanel() {
             </div>
           </>
         )}
+        </div>
       </div>
     </>
   );

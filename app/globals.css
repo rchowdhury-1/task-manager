@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent horizontal scrollbar on mobile — defence-in-depth */
+body {
+  overflow-x: hidden;
+}
+
 /* Prevent iOS Safari zoom on input focus.
    Uses !important because component utility classes
    (text-sm, text-xs) would otherwise override @layer base. */
