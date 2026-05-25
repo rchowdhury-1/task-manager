@@ -381,6 +381,9 @@ function Footer() {
           <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
         </div>
       </div>
+      <div className="max-w-[1240px] mx-auto mt-6 pt-6 border-t border-border text-center">
+        <p className="text-[12.5px] text-tertiary">Website made by <a href="https://portfolio-project-tau-olive.vercel.app" target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-primary transition-colors">Razwanul Chowdhury</a></p>
+      </div>
     </footer>
   );
 }
