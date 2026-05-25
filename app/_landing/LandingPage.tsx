@@ -373,16 +373,13 @@ function Footer() {
         <div className="flex items-center gap-2.5">
           <LogoMark size={18} />
           <span className="text-[12.5px] text-secondary whitespace-nowrap">
-            Personal OS &middot; Made by Razwan
+            Personal OS &middot; Made by Razwanul Chowdhury — <a href="https://portfolio-project-tau-olive.vercel.app" target="_blank" rel="noopener noreferrer" className="underline text-tertiary hover:text-primary transition-colors">Get in touch</a>
           </span>
         </div>
         <div className="flex gap-5 text-[12.5px] text-tertiary">
           <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
           <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
         </div>
-      </div>
-      <div className="max-w-[1240px] mx-auto mt-6 pt-6 border-t border-border text-center">
-        <p className="text-[12.5px] text-tertiary">Website made by <a href="https://portfolio-project-tau-olive.vercel.app" target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-primary transition-colors">Razwanul Chowdhury</a></p>
       </div>
     </footer>
   );
