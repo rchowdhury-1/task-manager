@@ -11,7 +11,6 @@ import { AICommandBar } from '@/components/AICommandBar';
 import { KeyboardHelp } from '@/components/KeyboardHelp';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
-import { useShortcutLabel } from '@/lib/hooks/usePlatform';
 import Providers from '../providers';
 
 const NAV_ITEMS = [
@@ -159,29 +158,6 @@ function MobileAvatarSheet() {
   );
 }
 
-// ─── Search Pill ───────────────────────────────────────────────────────────
-
-function SearchPill() {
-  const shortcutLabel = useShortcutLabel('K');
-
-  return (
-    <button
-      onClick={() => {
-        // Dispatch Cmd+K / Ctrl+K to open command palette if wired
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
-      }}
-      className="hidden md:flex items-center gap-2 px-3 py-1.5 border border-border rounded-full text-secondary hover:text-primary hover:border-border-strong transition-colors text-[13px]"
-      aria-label="Search"
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.3-4.3" />
-      </svg>
-      <kbd className="text-[11px] text-tertiary font-mono">{shortcutLabel}</kbd>
-    </button>
-  );
-}
-
 // ─── App Layout Inner ──────────────────────────────────────────────────────
 
 function AppLayoutInner({ children }: { children: React.ReactNode }) {
@@ -190,48 +166,49 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-page overflow-x-hidden">
       {/* Top header bar */}
-      <header className="fixed top-0 left-0 right-0 z-40 min-h-[60px] pt-[env(safe-area-inset-top)] bg-surface border-b border-border flex items-center px-4 md:px-8">
-        {/* Left: Logo + wordmark */}
-        <Link href="/today" className="flex items-center gap-2 shrink-0">
-          <LogoMark size={22} />
-          <span className="text-[14px] font-semibold tracking-tight text-primary hidden sm:inline">
-            Personal OS
-          </span>
-        </Link>
+      <header className="fixed top-0 left-0 right-0 z-40 pt-[env(safe-area-inset-top)] bg-surface border-b border-border">
+        <div className="h-[60px] flex items-center px-4 md:px-8">
+          {/* Left: Logo + wordmark */}
+          <Link href="/today" className="flex items-center gap-2 shrink-0">
+            <LogoMark size={22} />
+            <span className="text-[14px] font-semibold tracking-tight text-primary hidden sm:inline">
+              Personal OS
+            </span>
+          </Link>
 
-        {/* Centre: Nav tabs (desktop only) */}
-        <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
-          {NAV_ITEMS.map(item => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  relative px-3 py-2 text-[13.5px] font-medium transition-colors
-                  ${isActive
-                    ? 'text-accent'
-                    : 'text-secondary hover:text-primary'
-                  }
-                `}
-              >
-                {item.label}
-                {isActive && (
-                  <span className="absolute bottom-0 left-1 right-1 h-0.5 bg-accent rounded-full" />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+          {/* Centre: Nav tabs (desktop only) */}
+          <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
+            {NAV_ITEMS.map(item => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    relative px-3 py-2 text-[13.5px] font-medium transition-colors
+                    ${isActive
+                      ? 'text-accent'
+                      : 'text-secondary hover:text-primary'
+                    }
+                  `}
+                >
+                  {item.label}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-1 right-1 h-0.5 bg-accent rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
 
-        {/* Right: Search + Theme + Avatar */}
-        <div className="ml-auto flex items-center gap-3">
-          <SearchPill />
-          <div className="hidden md:block">
-            <ThemeToggle />
+          {/* Right: Theme + Avatar */}
+          <div className="ml-auto flex items-center gap-3">
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
+            <AvatarMenu />
+            <MobileAvatarSheet />
           </div>
-          <AvatarMenu />
-          <MobileAvatarSheet />
         </div>
       </header>
 
