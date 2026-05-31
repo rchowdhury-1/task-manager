@@ -2,9 +2,87 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useQueryClient as __useQueryClient } from '@tanstack/react-query';
 import { useMe, useUpdateMe, useLogout } from '@/lib/api/hooks';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { fadeInUp, staggerChildren } from '@/lib/animations';
+import { subscribeToPush, unsubscribeFromPush } from '@/lib/notifications/push';
+
+function NotificationToggle({ enabled }: { enabled: boolean }) {
+  const [toggling, setToggling] = useState(false);
+  const [supported, setSupported] = useState(true);
+  const [blocked, setBlocked] = useState(false);
+  const queryClient = __useQueryClient();
+
+  useEffect(() => {
+    if (typeof Notification === 'undefined' || !('PushManager' in window)) {
+      setSupported(false);
+    } else if (Notification.permission === 'denied') {
+      setBlocked(true);
+    }
+  }, []);
+
+  const handleToggle = async () => {
+    setToggling(true);
+    try {
+      if (enabled) {
+        await unsubscribeFromPush();
+        await fetch('/api/v1/notifications/preferences', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationsEnabled: false }),
+        });
+        toast.success('Notifications disabled');
+      } else {
+        await subscribeToPush();
+        await fetch('/api/v1/notifications/preferences', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notificationsEnabled: true }),
+        });
+        toast.success('Notifications enabled');
+      }
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+    } catch (e) {
+      toast.error(enabled ? "Couldn't disable notifications." : "Couldn't enable notifications.");
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  const disabled = !supported || blocked || toggling;
+  const subText = !supported
+    ? "Your browser doesn't support notifications."
+    : blocked
+    ? 'Notifications blocked. Enable in browser/OS settings to use.'
+    : 'Receive a quote about habits and identity twice a day.';
+
+  return (
+    <div className="flex items-center justify-between py-1">
+      <div>
+        <p className="text-[14px] font-medium text-primary">Daily quote notifications</p>
+        <p className="text-[12.5px] text-tertiary mt-0.5">{subText}</p>
+      </div>
+      <button
+        onClick={handleToggle}
+        disabled={disabled}
+        className={`
+          relative w-11 h-6 rounded-full transition-colors shrink-0
+          ${enabled ? 'bg-accent' : 'bg-surface-raised border border-border'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+        `}
+        aria-label={enabled ? 'Disable notifications' : 'Enable notifications'}
+      >
+        <span className={`
+          absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform
+          ${enabled ? 'translate-x-[22px]' : 'translate-x-0.5'}
+        `} />
+      </button>
+    </div>
+  );
+}
 
 function TrialStatus({ trialEndsAt }: { trialEndsAt?: string | Date | null }) {
   if (!trialEndsAt) return null;
@@ -145,6 +223,8 @@ export function AccountSection() {
           </div>
           <ThemeToggle />
         </div>
+
+        <NotificationToggle enabled={me?.notificationsEnabled ?? false} />
       </motion.div>
 
       {/* Sign out */}

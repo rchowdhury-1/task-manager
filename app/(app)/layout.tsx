@@ -11,6 +11,7 @@ import { AICommandBar } from '@/components/AICommandBar';
 import { KeyboardHelp } from '@/components/KeyboardHelp';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { NotificationOptInBanner } from '@/components/NotificationOptInBanner';
 import Providers from '../providers';
 
 const NAV_ITEMS = [
@@ -225,6 +226,9 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* PWA install prompt */}
       <PWAInstallPrompt />
+
+      {/* Notification opt-in banner */}
+      <NotificationOptInBanner />
     </div>
   );
 }

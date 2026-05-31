@@ -9,6 +9,7 @@ const userFields = {
   id: users.id,
   email: users.email,
   name: users.name,
+  notificationsEnabled: users.notificationsEnabled,
   trialEndsAt: users.trialEndsAt,
   createdAt: users.createdAt,
 };
