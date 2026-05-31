@@ -190,7 +190,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-page overflow-x-hidden">
       {/* Top header bar */}
-      <header className="fixed top-0 left-0 right-0 z-40 h-[60px] bg-surface border-b border-border flex items-center px-4 md:px-8">
+      <header className="fixed top-0 left-0 right-0 z-40 min-h-[60px] pt-[env(safe-area-inset-top)] bg-surface border-b border-border flex items-center px-4 md:px-8">
         {/* Left: Logo + wordmark */}
         <Link href="/today" className="flex items-center gap-2 shrink-0">
           <LogoMark size={22} />
@@ -236,7 +236,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main content area — no sidebar */}
-      <main className="pt-[60px] min-h-screen">
+      <main className="pt-[calc(60px+env(safe-area-inset-top))] min-h-screen">
         <div className="px-4 pt-4 pb-36 md:px-6 md:pt-6 md:pb-24">{children}</div>
       </main>
 

@@ -50,7 +50,6 @@ body::-webkit-scrollbar {
 
 @media (display-mode: standalone) {
   body {
-    padding-top: var(--safe-area-inset-top);
     padding-left: var(--safe-area-inset-left);
     padding-right: var(--safe-area-inset-right);
   }
