@@ -3,19 +3,30 @@ import { db } from '@/lib/db';
 import { pushSubscriptions, users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
-// Configure web-push
-if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT ?? 'mailto:placeholder@personalos.app',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
+// Lazy VAPID initialization — avoids build-time crash when env vars are missing
+let _vapidConfigured = false;
+
+function ensureVapidConfigured() {
+  if (_vapidConfigured) return;
+
+  const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = process.env;
+
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_SUBJECT) {
+    throw new Error(
+      'VAPID environment variables not configured. Required: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT'
+    );
+  }
+
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  _vapidConfigured = true;
 }
 
 export async function sendEngagementNotification(
   userId: string,
   payload: { title: string; body: string; url?: string; tag?: string }
 ) {
+  ensureVapidConfigured();
+
   const subs = await db.select()
     .from(pushSubscriptions)
     .where(eq(pushSubscriptions.userId, userId));
