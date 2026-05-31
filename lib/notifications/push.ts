@@ -10,6 +10,13 @@ export async function subscribeToPush() {
 
   const registration = await navigator.serviceWorker.ready;
 
+  // Defensive: unsubscribe any lingering browser-side subscription
+  // before creating a fresh one (prevents collision on re-enable)
+  const existing = await registration.pushManager.getSubscription();
+  if (existing) {
+    await existing.unsubscribe();
+  }
+
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(vapidKey),
@@ -17,7 +24,7 @@ export async function subscribeToPush() {
 
   const json = subscription.toJSON();
 
-  await fetch('/api/v1/notifications/subscribe', {
+  const res = await fetch('/api/v1/notifications/subscribe', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
@@ -26,6 +33,10 @@ export async function subscribeToPush() {
       keys: json.keys,
     }),
   });
+
+  if (!res.ok) {
+    throw new Error(`Subscribe API failed: ${res.status}`);
+  }
 
   return subscription;
 }

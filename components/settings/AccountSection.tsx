@@ -46,7 +46,23 @@ function NotificationToggle({ enabled }: { enabled: boolean }) {
       }
       queryClient.invalidateQueries({ queryKey: ['me'] });
     } catch (e) {
-      toast.error(enabled ? "Couldn't disable notifications." : "Couldn't enable notifications.");
+      console.error('Notification toggle failed:', e);
+      if (enabled) {
+        toast.error("Couldn't disable notifications.");
+      } else {
+        if (typeof Notification !== 'undefined') {
+          if (Notification.permission === 'denied') {
+            toast.error('Notifications are blocked. Enable them in your browser settings.');
+          } else if (Notification.permission === 'default') {
+            toast.error('Notification permission was not granted. Please try again.');
+          } else {
+            const msg = e instanceof Error ? e.message : 'Unknown error';
+            toast.error(`Could not enable notifications: ${msg}`);
+          }
+        } else {
+          toast.error("Notifications aren't supported in this browser.");
+        }
+      }
     } finally {
       setToggling(false);
     }
