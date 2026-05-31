@@ -147,7 +147,7 @@ export function AICommandBar() {
         </div>
 
         {/* Mobile bar */}
-        <div className="md:hidden fixed bottom-14 left-0 right-0 z-30 px-3 pb-2">
+        <div className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-30 px-3 pb-2">
           <button
             onClick={open}
             className="w-full flex items-center gap-3 px-4 py-3 bg-accent text-white rounded-xl shadow-lg"

@@ -15,7 +15,7 @@ export function MobileBottomNav() {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-40 pb-[env(safe-area-inset-bottom)]">
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-4 min-h-16">
         {TABS.map(tab => {
           const isActive = pathname === tab.href;
           const Icon = tab.icon;
