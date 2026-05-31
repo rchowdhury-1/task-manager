@@ -606,6 +606,18 @@ export function TaskDetailPanel() {
                       onChange={(e) => handleScheduledTime(e.target.value)}
                       className="w-full px-2 py-1 text-sm bg-surface border border-border rounded text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                     />
+                    {assignedDay && scheduledTime && (
+                      <a
+                        href={`/api/v1/tasks/${task.id}/ics`}
+                        download
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-secondary hover:text-accent border border-border rounded-md hover:border-accent transition-colors mt-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+                          <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
+                        </svg>
+                        Add to calendar
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
