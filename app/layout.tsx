@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter_Tight, Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import "./globals.css";
 
 const interTight = Inter_Tight({
@@ -24,6 +25,12 @@ const jetbrainsMono = JetBrains_Mono({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F9F9FB' },
+    { media: '(prefers-color-scheme: dark)', color: '#0A0A0B' },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -32,6 +39,14 @@ export const metadata: Metadata = {
     template: '%s · Personal OS',
   },
   description: 'A calm, structured home for tasks, habits, deep work, studies, and the errands you keep putting off.',
+  appleWebApp: {
+    capable: true,
+    title: 'Personal OS',
+    statusBarStyle: 'black-translucent',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: 'Personal OS',
     description: 'Run your life on quiet rails.',
@@ -69,7 +84,10 @@ export default function RootLayout({
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`${interTight.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} font-sans`}>{children}</body>
+      <body className={`${interTight.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} font-sans`}>
+        {children}
+        <ServiceWorkerRegistration />
+      </body>
     </html>
   );
 }

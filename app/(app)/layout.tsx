@@ -10,6 +10,7 @@ import { TaskDetailPanel } from '@/components/TaskDetailPanel';
 import { AICommandBar } from '@/components/AICommandBar';
 import { KeyboardHelp } from '@/components/KeyboardHelp';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useShortcutLabel } from '@/lib/hooks/usePlatform';
 import Providers from '../providers';
 
@@ -244,6 +245,9 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom nav */}
       <MobileBottomNav />
+
+      {/* PWA install prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 }

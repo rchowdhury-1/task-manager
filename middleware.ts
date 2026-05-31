@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const PUBLIC_PATHS = ['/login', '/register', '/', '/terms', '/privacy'];
 
 // Paths accessible to everyone, regardless of auth
-const ALWAYS_PUBLIC = ['/terms', '/privacy'];
+const ALWAYS_PUBLIC = ['/terms', '/privacy', '/offline'];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

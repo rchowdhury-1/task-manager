@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useAICommand } from '@/lib/api/hooks';
 import { useShortcutLabel } from '@/lib/hooks/usePlatform';
+import { haptic } from '@/lib/haptics';
 
 // ─── Sparkle Icon ───────────────────────────────────────────────────────────
 
@@ -117,7 +118,7 @@ export function AICommandBar() {
     setResponse(null);
 
     aiCommand.mutate(trimmed, {
-      onSuccess: (data) => setResponse(data),
+      onSuccess: (data) => { haptic('light'); setResponse(data); },
       onError: (err) => {
         const msg = err instanceof Error ? err.message : 'Something went wrong';
         setError(msg);

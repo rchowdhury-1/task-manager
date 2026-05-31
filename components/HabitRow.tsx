@@ -1,4 +1,5 @@
 import type { Habit, Section } from '@/lib/types';
+import { haptic } from '@/lib/haptics';
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -79,7 +80,7 @@ export function HabitRowDesktop({
 
       {/* Toggle */}
       <button
-        onClick={() => onToggle(habit.id, todayStr, todayDone)}
+        onClick={() => { haptic(todayDone ? 'light' : 'success'); onToggle(habit.id, todayStr, todayDone); }}
         aria-label={todayDone ? `Mark ${habit.name} incomplete` : `Mark ${habit.name} complete`}
         className={`
           w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors
@@ -111,7 +112,7 @@ interface HabitCellProps {
 export function HabitCellMobile({ habit, todayStr, done, onToggle }: HabitCellProps) {
   return (
     <button
-      onClick={() => onToggle(habit.id, todayStr, done)}
+      onClick={() => { haptic(done ? 'light' : 'success'); onToggle(habit.id, todayStr, done); }}
       className={`
         flex items-center justify-between p-2.5 px-3 rounded-[10px] border transition-colors
         ${done
