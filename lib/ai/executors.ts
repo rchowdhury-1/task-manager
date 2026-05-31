@@ -2,12 +2,14 @@ import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   tasks,
+  users,
   habits,
   habitCompletions,
   dayRules,
   recurringTasks,
 } from '@/lib/db/schema';
 import type { DB } from '@/lib/db';
+import { todayInTimezone } from '@/lib/utils/timezone';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -199,7 +201,12 @@ async function completeHabit(userId: string, args: Record<string, unknown>, db: 
   const parsed = completeHabitArgs.safeParse(args);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
-  const date = parsed.data.date ?? new Date().toISOString().slice(0, 10);
+  // Use user's timezone for "today" default
+  let date = parsed.data.date;
+  if (!date) {
+    const [userRow] = await db.select({ timezone: users.timezone }).from(users).where(eq(users.id, userId)).limit(1);
+    date = todayInTimezone(userRow?.timezone ?? 'UTC');
+  }
 
   // Verify habit belongs to user
   const [habit] = await db.select({ id: habits.id, name: habits.name })

@@ -2,9 +2,10 @@ import { NextRequest } from "next/server";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { tasks, habits, habitCompletions } from "@/lib/db/schema";
+import { tasks, users, habits, habitCompletions } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
 import { activityLevel } from "@/lib/utils/activityLevel";
+import { todayInTimezone } from "@/lib/utils/timezone";
 
 const rangeSchema = z.enum(["7d", "30d", "90d"]).default("30d");
 
@@ -40,8 +41,12 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
   const range = rangeParsed.success ? rangeParsed.data : "30d";
   const days = daysFromRange(range);
 
+  // Use user's timezone for "today" boundary
+  const [userRow] = await db.select({ timezone: users.timezone }).from(users).where(eq(users.id, userId)).limit(1);
+  const userTz = userRow?.timezone ?? 'UTC';
+
   const now = new Date();
-  const today = dateISO(now);
+  const today = todayInTimezone(userTz);
   const startDate = subtractDays(now, days);
   const startISO = dateISO(startDate);
 

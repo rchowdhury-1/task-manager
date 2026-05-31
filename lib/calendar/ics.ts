@@ -9,6 +9,12 @@ export interface ICSEvent {
   dtStart: Date;
   dtEnd: Date;
   createdAt?: Date;
+  /** IANA timezone for TZID-qualified output. If omitted, uses UTC format. */
+  timezone?: string;
+  /** Local wall-clock start time (used with timezone for TZID output) */
+  localStart?: { year: number; month: number; day: number; hour: number; minute: number };
+  /** Local wall-clock end time (used with timezone for TZID output) */
+  localEnd?: { year: number; month: number; day: number; hour: number; minute: number };
 }
 
 export function generateICS(event: ICSEvent): string {
@@ -20,10 +26,18 @@ export function generateICS(event: ICSEvent): string {
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
     `UID:${event.uid}`,
-    `DTSTART:${formatUTC(event.dtStart)}`,
-    `DTEND:${formatUTC(event.dtEnd)}`,
-    `SUMMARY:${escapeText(event.summary)}`,
   ];
+
+  // Use TZID-qualified local time when timezone + local times are provided
+  if (event.timezone && event.localStart && event.localEnd) {
+    lines.push(`DTSTART;TZID=${event.timezone}:${formatLocal(event.localStart)}`);
+    lines.push(`DTEND;TZID=${event.timezone}:${formatLocal(event.localEnd)}`);
+  } else {
+    lines.push(`DTSTART:${formatUTC(event.dtStart)}`);
+    lines.push(`DTEND:${formatUTC(event.dtEnd)}`);
+  }
+
+  lines.push(`SUMMARY:${escapeText(event.summary)}`);
 
   if (event.description) {
     lines.push(`DESCRIPTION:${escapeText(event.description)}`);
@@ -38,6 +52,12 @@ export function generateICS(event: ICSEvent): string {
   lines.push('END:VCALENDAR');
 
   return lines.map(foldLine).join('\r\n') + '\r\n';
+}
+
+/** Format local wall-clock parts as: 20260601T180000 (no Z suffix) */
+export function formatLocal(parts: { year: number; month: number; day: number; hour: number; minute: number }): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${parts.year}${pad(parts.month)}${pad(parts.day)}T${pad(parts.hour)}${pad(parts.minute)}00`;
 }
 
 /** Format a Date as UTC timestamp: 20240115T093000Z */

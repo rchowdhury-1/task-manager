@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseQuickAdd } from '@/lib/parseQuickAdd';
 
 function toISODate(d: Date): string {
-  return d.toISOString().split('T')[0];
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function nextWeekday(target: number): string {

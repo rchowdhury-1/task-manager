@@ -3,17 +3,27 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   tasks,
+  users,
   habits,
   habitCompletions,
   dayRules,
   recurringTasks,
 } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
+import { todayInTimezone } from "@/lib/utils/timezone";
 
 export const GET = withAuth(async (req: NextRequest, { userId }) => {
   const { searchParams } = new URL(req.url);
   const dateParam = searchParams.get("date");
-  const dateStr = dateParam ?? new Date().toISOString().split("T")[0];
+
+  // Get user's timezone for "today" default
+  let dateStr: string;
+  if (dateParam) {
+    dateStr = dateParam;
+  } else {
+    const [user] = await db.select({ timezone: users.timezone }).from(users).where(eq(users.id, userId)).limit(1);
+    dateStr = todayInTimezone(user?.timezone ?? 'UTC');
+  }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     return Response.json({ error: "Invalid date format, use YYYY-MM-DD" }, { status: 400 });

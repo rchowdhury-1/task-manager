@@ -1,12 +1,17 @@
 import { eq, desc } from 'drizzle-orm';
-import { tasks, habits, dayRules, recurringTasks } from '@/lib/db/schema';
+import { tasks, users, habits, dayRules, recurringTasks } from '@/lib/db/schema';
 import type { DB } from '@/lib/db';
+import { todayInTimezone } from '@/lib/utils/timezone';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MAX_TASKS = 30;
 
 export async function buildUserContext(userId: string, db: DB): Promise<string> {
-  const [userTasks, userHabits, userDayRules, userRecurring] = await Promise.all([
+  const [userRows, userTasks, userHabits, userDayRules, userRecurring] = await Promise.all([
+    db.select({ timezone: users.timezone })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1),
     db.select()
       .from(tasks)
       .where(eq(tasks.userId, userId))
@@ -23,7 +28,8 @@ export async function buildUserContext(userId: string, db: DB): Promise<string> 
       .where(eq(recurringTasks.userId, userId)),
   ]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const userTz = userRows[0]?.timezone ?? 'UTC';
+  const today = todayInTimezone(userTz);
   const lines: string[] = [`Current state (as of ${today}):\n`];
 
   // Tasks

@@ -9,6 +9,7 @@ const userFields = {
   id: users.id,
   email: users.email,
   name: users.name,
+  timezone: users.timezone,
   notificationsEnabled: users.notificationsEnabled,
   trialEndsAt: users.trialEndsAt,
   createdAt: users.createdAt,
@@ -41,6 +42,14 @@ export const PATCH = withAuth(async (req: NextRequest, { userId }) => {
 
   const set: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) set.name = parsed.data.name;
+  if (parsed.data.timezone !== undefined) {
+    try {
+      new Intl.DateTimeFormat('en', { timeZone: parsed.data.timezone });
+      set.timezone = parsed.data.timezone;
+    } catch {
+      return Response.json({ error: "Invalid timezone" }, { status: 400 });
+    }
+  }
 
   if (Object.keys(set).length === 0) {
     return Response.json({ error: "No fields to update" }, { status: 400 });

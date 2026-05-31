@@ -22,7 +22,8 @@ interface ListViewProps {
 
 function ListItem({ task, onToggle, onClick }: { task: Task; onToggle: () => void; onClick: () => void }) {
   const isDone = task.status === 'done';
-  const dateLabel = task.assignedDay === new Date().toISOString().slice(0, 10) ? 'Today' :
+  const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+  const dateLabel = task.assignedDay === todayStr ? 'Today' :
     task.assignedDay ?? '—';
 
   return (

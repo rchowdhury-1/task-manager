@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateICS, formatUTC, escapeText, foldLine } from '@/lib/calendar/ics';
+import { generateICS, formatUTC, formatLocal, escapeText, foldLine } from '@/lib/calendar/ics';
 
 describe('formatUTC', () => {
   it('formats a date as UTC timestamp', () => {
@@ -10,6 +10,18 @@ describe('formatUTC', () => {
   it('pads single digits', () => {
     const d = new Date('2025-01-05T09:05:03Z');
     expect(formatUTC(d)).toBe('20250105T090503Z');
+  });
+});
+
+describe('formatLocal', () => {
+  it('formats local parts without Z suffix', () => {
+    expect(formatLocal({ year: 2026, month: 6, day: 1, hour: 18, minute: 0 }))
+      .toBe('20260601T180000');
+  });
+
+  it('pads single digits', () => {
+    expect(formatLocal({ year: 2026, month: 1, day: 5, hour: 9, minute: 5 }))
+      .toBe('20260105T090500');
   });
 });
 
@@ -36,7 +48,6 @@ describe('foldLine', () => {
     const parts = folded.split('\r\n');
     expect(parts.length).toBeGreaterThan(1);
     expect(parts[0].length).toBe(75);
-    // Continuation lines start with a space
     for (let i = 1; i < parts.length; i++) {
       expect(parts[i][0]).toBe(' ');
       expect(parts[i].length).toBeLessThanOrEqual(75);
@@ -45,7 +56,7 @@ describe('foldLine', () => {
 });
 
 describe('generateICS', () => {
-  it('produces valid VCALENDAR structure', () => {
+  it('produces valid VCALENDAR structure (UTC mode)', () => {
     const ics = generateICS({
       uid: 'test-123@personalos.app',
       summary: 'Build feature',
@@ -94,10 +105,37 @@ describe('generateICS', () => {
       dtEnd: new Date('2025-06-01T11:00:00Z'),
     });
 
-    // Every line should end with \r\n
     const lines = ics.split('\r\n');
     expect(lines.length).toBeGreaterThan(5);
-    // Last element after final \r\n is empty string
     expect(lines[lines.length - 1]).toBe('');
+  });
+
+  it('generates TZID-qualified DTSTART/DTEND when timezone and local times provided', () => {
+    const ics = generateICS({
+      uid: 'tz-test@personalos.app',
+      summary: '6pm BST task',
+      dtStart: new Date('2026-06-01T17:00:00Z'), // 5pm UTC = 6pm BST
+      dtEnd: new Date('2026-06-01T18:00:00Z'),
+      timezone: 'Europe/London',
+      localStart: { year: 2026, month: 6, day: 1, hour: 18, minute: 0 },
+      localEnd: { year: 2026, month: 6, day: 1, hour: 19, minute: 0 },
+    });
+
+    expect(ics).toContain('DTSTART;TZID=Europe/London:20260601T180000');
+    expect(ics).toContain('DTEND;TZID=Europe/London:20260601T190000');
+    // Should NOT contain UTC format for start/end
+    expect(ics).not.toContain('DTSTART:2026');
+  });
+
+  it('falls back to UTC format when timezone not provided', () => {
+    const ics = generateICS({
+      uid: 'utc-test@personalos.app',
+      summary: 'UTC task',
+      dtStart: new Date('2026-06-01T17:00:00Z'),
+      dtEnd: new Date('2026-06-01T18:00:00Z'),
+    });
+
+    expect(ics).toContain('DTSTART:20260601T170000Z');
+    expect(ics).toContain('DTEND:20260601T180000Z');
   });
 });

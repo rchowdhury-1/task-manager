@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 255 }).unique().notNull(),
   passwordHash: text("password_hash").notNull(),
   name: varchar("name", { length: 120 }),
+  timezone: text("timezone").default('UTC').notNull(),
   notificationsEnabled: boolean("notifications_enabled").default(false).notNull(),
   trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`),

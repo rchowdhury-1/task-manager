@@ -1,24 +1,33 @@
+import { utcToLocalParts } from '@/lib/utils/timezone';
+
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-function buildDateTable(now: Date): string {
+function dateToISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function buildDateTable(now: Date, timezone: string): string {
   const lines: string[] = [];
+  // Derive "today" from the provided `now` in the user's timezone
+  const p = utcToLocalParts(now, timezone);
+  const baseDate = new Date(p.year, p.month - 1, p.day);
+
   for (let i = 0; i < 14; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() + i);
-    const iso = d.toISOString().slice(0, 10);
-    const dayName = DAY_NAMES[d.getDay()];
+    const iter = new Date(baseDate);
+    iter.setDate(baseDate.getDate() + i);
+    const iso = dateToISO(iter);
+    const dayName = DAY_NAMES[iter.getDay()];
 
     let marker = '';
     if (i === 0) marker = ' — today';
     else if (i === 1) marker = ' — tomorrow';
     else {
       // Mark the first future occurrence of each weekday
-      const dow = d.getDay();
-      // Check if this is the earliest occurrence of this weekday in the table (excluding today)
+      const dow = iter.getDay();
       let isFirst = true;
       for (let j = 1; j < i; j++) {
-        const prev = new Date(now);
-        prev.setDate(prev.getDate() + j);
+        const prev = new Date(baseDate);
+        prev.setDate(baseDate.getDate() + j);
         if (prev.getDay() === dow) { isFirst = false; break; }
       }
       if (isFirst) marker = ` ← next ${dayName}`;
@@ -29,10 +38,11 @@ function buildDateTable(now: Date): string {
   return lines.join('\n');
 }
 
-export function buildSystemPrompt(now: Date): string {
-  const today = now.toISOString().slice(0, 10);
-  const dayOfWeek = DAY_NAMES[now.getDay()];
-  const dateTable = buildDateTable(now);
+export function buildSystemPrompt(now: Date, timezone: string = 'UTC'): string {
+  const parts = utcToLocalParts(now, timezone);
+  const today = dateToISO(new Date(parts.year, parts.month - 1, parts.day));
+  const dayOfWeek = DAY_NAMES[new Date(parts.year, parts.month - 1, parts.day).getDay()];
+  const dateTable = buildDateTable(now, timezone);
 
   return `You are an AI assistant inside a personal productivity OS called Personal OS.
 
@@ -57,6 +67,7 @@ Focus areas: job_hunt, lms, freelance, learning, rest, flex
 
 Date: ${today}
 Day: ${dayOfWeek}
+User timezone: ${timezone}
 
 ## Date reference (next 14 days)
 
@@ -77,5 +88,6 @@ IMPORTANT: When scheduling tasks, always include the explicit ISO date in your r
 - When the user says "today", use ${today} as assigned_day.
 - When creating a task without an explicit category, default to "career".
 - When creating a habit without an explicit section, default to "growth".
-- If the user asks a question about their data (e.g. "what did I do today?"), answer from the context provided — do not call any tools.`;
+- If the user asks a question about their data (e.g. "what did I do today?"), answer from the context provided — do not call any tools.
+- All times the user mentions (e.g. "6pm", "9:30am") are in their timezone (${timezone}). Store scheduled_time as the user's local wall-clock time (HH:MM format). Do not convert.`;
 }

@@ -1,6 +1,6 @@
 import { format, parseISO, startOfWeek, addDays as dfAddDays } from 'date-fns';
 
-/** YYYY-MM-DD for user's local date */
+/** YYYY-MM-DD for user's local date (browser-side only) */
 export function todayISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -56,7 +56,7 @@ export function weekRangeLabel(mondayISO: string): string {
   return `${format(mon, 'd MMM')} - ${format(sun, 'd MMM yyyy')}`;
 }
 
-/** Whether the given ISO string matches today */
+/** Whether the given ISO string matches today (browser local) */
 export function isToday(iso: string): boolean {
   return iso === todayISO();
 }
@@ -80,11 +80,11 @@ export function addTime(time: string, minutes: number): string {
   return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
 }
 
-/** Whether a date string is within the next N days from today */
+/** Whether a date string is within the next N days from today (browser local) */
 export function isWithinNextDays(dateStr: string, n: number): boolean {
   const target = parseISO(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const end = dfAddDays(today, n);
   return target >= today && target <= end;
 }

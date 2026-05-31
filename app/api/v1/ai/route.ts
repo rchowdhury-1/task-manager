@@ -1,10 +1,11 @@
 import { NextRequest } from 'next/server';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { withAuth } from '@/lib/auth/handler';
 import { db } from '@/lib/db';
-import { aiCalls } from '@/lib/db/schema';
+import { aiCalls, users } from '@/lib/db/schema';
 import { TOOLS } from '@/lib/ai/tools';
 import { EXECUTORS } from '@/lib/ai/executors';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
@@ -53,9 +54,11 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   try {
-    // Build context
+    // Build context with user's timezone
     const now = new Date();
-    const systemPrompt = buildSystemPrompt(now);
+    const [userRow] = await db.select({ timezone: users.timezone }).from(users).where(eq(users.id, userId)).limit(1);
+    const userTz = userRow?.timezone ?? 'UTC';
+    const systemPrompt = buildSystemPrompt(now, userTz);
     const userContext = await buildUserContext(userId, db);
 
     const messages: ChatCompletionMessageParam[] = [

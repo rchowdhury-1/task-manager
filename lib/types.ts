@@ -24,6 +24,7 @@ export interface User {
   id: string;
   email: string;
   name: string | null;
+  timezone: string;
   notificationsEnabled: boolean;
   createdAt: string;
   trialEndsAt?: string | null;

@@ -43,7 +43,10 @@ export function useRegister() {
     mutationFn: (data: { email: string; password: string; name?: string }) =>
       apiFetch<{ user: User; token: string }>('/auth/register', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.me() });

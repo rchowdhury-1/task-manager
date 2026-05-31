@@ -36,7 +36,12 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password, name: name || undefined }),
+        body: JSON.stringify({
+          email,
+          password,
+          name: name || undefined,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       });
 
       const data = await res.json();

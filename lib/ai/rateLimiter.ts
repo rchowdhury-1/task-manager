@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
-import { aiUsage } from '@/lib/db/schema';
-import { sql } from 'drizzle-orm';
+import { aiUsage, users } from '@/lib/db/schema';
+import { eq, sql } from 'drizzle-orm';
+import { todayInTimezone } from '@/lib/utils/timezone';
 
 const DAILY_PROMPT_LIMIT = parseInt(
   process.env.AI_PROMPTS_PER_DAY_LIMIT ?? '100',
@@ -10,7 +11,8 @@ const DAILY_PROMPT_LIMIT = parseInt(
 export async function checkAndIncrementUsage(
   userId: string,
 ): Promise<{ allowed: boolean; used: number; limit: number }> {
-  const today = new Date().toISOString().slice(0, 10);
+  const [userRow] = await db.select({ timezone: users.timezone }).from(users).where(eq(users.id, userId)).limit(1);
+  const today = todayInTimezone(userRow?.timezone ?? 'UTC');
 
   const [row] = await db
     .insert(aiUsage)
@@ -35,7 +37,8 @@ export async function incrementTokenUsage(
   userId: string,
   tokens: number,
 ): Promise<void> {
-  const today = new Date().toISOString().slice(0, 10);
+  const [userRow] = await db.select({ timezone: users.timezone }).from(users).where(eq(users.id, userId)).limit(1);
+  const today = todayInTimezone(userRow?.timezone ?? 'UTC');
 
   await db
     .insert(aiUsage)

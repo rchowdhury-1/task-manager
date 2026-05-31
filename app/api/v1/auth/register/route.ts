@@ -32,7 +32,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, name } = parsed.data;
+    const { email, password, name, timezone: rawTz } = parsed.data;
+
+    // Validate IANA timezone, default to UTC if invalid/missing
+    let timezone = 'UTC';
+    if (rawTz) {
+      try {
+        new Intl.DateTimeFormat('en', { timeZone: rawTz });
+        timezone = rawTz;
+      } catch {
+        // invalid timezone string, keep UTC default
+      }
+    }
 
     const existing = await db
       .select({ id: users.id })
@@ -57,12 +68,14 @@ export async function POST(req: NextRequest) {
         email: email.toLowerCase(),
         passwordHash,
         name: name ?? null,
+        timezone,
         trialEndsAt,
       })
       .returning({
         id: users.id,
         email: users.email,
         name: users.name,
+        timezone: users.timezone,
         createdAt: users.createdAt,
       });
 
