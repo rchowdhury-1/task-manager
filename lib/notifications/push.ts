@@ -8,6 +8,14 @@ export async function subscribeToPush() {
     throw new Error('VAPID public key not configured');
   }
 
+  // Must have notification permission before subscribing
+  if (Notification.permission !== 'granted') {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      throw new Error('Notification permission denied');
+    }
+  }
+
   let registration = await navigator.serviceWorker.ready;
 
   // Defensive: unsubscribe any lingering browser-side subscription
