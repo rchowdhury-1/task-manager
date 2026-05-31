@@ -8,7 +8,7 @@ export async function subscribeToPush() {
     throw new Error('VAPID public key not configured');
   }
 
-  const registration = await navigator.serviceWorker.ready;
+  let registration = await navigator.serviceWorker.ready;
 
   // Defensive: unsubscribe any lingering browser-side subscription
   // before creating a fresh one (prevents collision on re-enable)
@@ -17,10 +17,23 @@ export async function subscribeToPush() {
     await existing.unsubscribe();
   }
 
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(vapidKey),
-  });
+  let subscription: PushSubscription;
+  try {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    });
+  } catch (err) {
+    // If push service rejects (e.g. VAPID key changed), unregister
+    // the service worker entirely and re-register with a clean slate
+    await registration.unregister();
+    registration = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+    });
+  }
 
   const json = subscription.toJSON();
 
