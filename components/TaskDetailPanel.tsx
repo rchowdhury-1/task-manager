@@ -147,6 +147,71 @@ export function TaskDetailPanel() {
     }
   }, [activeTaskId]);
 
+  // Values awaiting a debounced save, keyed by API field name. Flushed
+  // immediately on close so no exit path can drop the last keystrokes.
+  const pendingValues = useRef<Record<string, unknown>>({});
+
+  const flushPendingSaves = useCallback(() => {
+    const pending = pendingValues.current;
+    pendingValues.current = {};
+    for (const field of Object.keys(pending)) {
+      if (debounceTimers.current[field]) clearTimeout(debounceTimers.current[field]);
+      if (!activeTaskId) continue;
+      updateTask.mutate(
+        { id: activeTaskId, patch: { [field]: pending[field] } as Record<string, unknown> },
+        { onError: () => toast.error('Save failed. Try again.') },
+      );
+    }
+  }, [activeTaskId, updateTask]);
+
+  // Pending values belong to the task they were typed on; on switch the
+  // still-armed debounce timers save them (their closures hold the old id),
+  // but they must not be flushed onto the newly opened task.
+  useEffect(() => {
+    pendingValues.current = {};
+  }, [activeTaskId]);
+
+  // Back-navigation support (mobile/PWA): opening the panel pushes a history
+  // entry so pressing back closes the panel instead of leaving the app.
+  const historyPushed = useRef(false);
+
+  useEffect(() => {
+    if (activeTaskId && !historyPushed.current) {
+      window.history.pushState({ posTaskPanel: true }, '');
+      historyPushed.current = true;
+    }
+  }, [activeTaskId]);
+
+  const closeRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    function onPopState() {
+      if (historyPushed.current) {
+        historyPushed.current = false;
+        closeRef.current();
+      }
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const close = useCallback(() => {
+    flushPendingSaves();
+    setActiveTaskId(null);
+    if (historyPushed.current) {
+      historyPushed.current = false;
+      // consume the entry pushed on open so back doesn't need a second press
+      window.history.back();
+    }
+  }, [flushPendingSaves, setActiveTaskId]);
+
+  useEffect(() => {
+    closeRef.current = () => {
+      flushPendingSaves();
+      setActiveTaskId(null);
+    };
+  }, [flushPendingSaves, setActiveTaskId]);
+
   // Escape to close
   useEffect(() => {
     if (!activeTaskId) return;
@@ -154,22 +219,22 @@ export function TaskDetailPanel() {
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        setActiveTaskId(null);
+        close();
       }
     }
     window.addEventListener('keydown', handleKey, true);
     return () => window.removeEventListener('keydown', handleKey, true);
-  }, [activeTaskId, setActiveTaskId]);
-
-  const close = useCallback(() => setActiveTaskId(null), [setActiveTaskId]);
+  }, [activeTaskId, close]);
 
   // Debounced patch helper
   const patchField = useCallback(
     (field: string, value: unknown) => {
       if (!activeTaskId) return;
       if (debounceTimers.current[field]) clearTimeout(debounceTimers.current[field]);
+      pendingValues.current[field] = value;
 
       debounceTimers.current[field] = setTimeout(() => {
+        delete pendingValues.current[field];
         markSaving();
         updateTask.mutate(
           { id: activeTaskId, patch: { [field]: value } as Record<string, unknown> },
@@ -280,6 +345,9 @@ export function TaskDetailPanel() {
   const handleDelete = () => {
     if (!activeTaskId) return;
     if (!confirm('Delete this task? This cannot be undone.')) return;
+    // Drop pending autosaves — patching a task that's being deleted would 404
+    pendingValues.current = {};
+    Object.values(debounceTimers.current).forEach(clearTimeout);
     deleteTask.mutate(
       { id: activeTaskId },
       {
