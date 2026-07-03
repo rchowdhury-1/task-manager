@@ -17,7 +17,9 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
-    throw new ApiError(res.status, body.error ?? 'Request failed');
+    // Prefer the human-readable `message` when the API provides one
+    // (e.g. the AI daily-limit 429 includes usage details there)
+    throw new ApiError(res.status, body.message ?? body.error ?? 'Request failed');
   }
 
   return res.json() as Promise<T>;

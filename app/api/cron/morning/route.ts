@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendToAllEnabledUsers } from '@/lib/notifications/sender';
 import { quoteFor } from '@/lib/notifications/quotes';
+import { isAuthorizedCronRequest } from '@/lib/auth/cron';
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronRequest(request.headers.get('authorization'))) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { verifyPassword } from "@/lib/auth/password";
+import { verifyPassword, burnPasswordCheck } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { loginSchema } from "@/lib/validation/auth";
 
@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (!user) {
+      // Equalize response time with the existing-user path (enumeration)
+      await burnPasswordCheck(password);
       return NextResponse.json({ error: INVALID }, { status: 401 });
     }
 

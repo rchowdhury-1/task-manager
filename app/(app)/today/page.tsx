@@ -180,7 +180,8 @@ export default function TodayPage() {
       .filter(r => r.scheduledTime)
       .map(r => ({ title: r.title, time: r.scheduledTime! })),
   ]
-    .filter(e => e.time > nowTime)
+    // scheduledTime may be HH:MM or HH:MM:SS — normalise before comparing
+    .filter(e => e.time.slice(0, 5) > nowTime)
     .sort((a, b) => a.time.localeCompare(b.time));
 
   const nextEvent = allScheduled[0];
@@ -275,7 +276,7 @@ export default function TodayPage() {
       {/* ── Quick Add ─────────────────────────────────────────────────── */}
       <motion.div variants={fadeInUp}>
         <QuickAddInput
-          placeholder="+ Add a task, habit, or event\u2026"
+          placeholder={'+ Add a task, habit, or event\u2026'}
           onSubmit={handleQuickAdd}
         />
       </motion.div>

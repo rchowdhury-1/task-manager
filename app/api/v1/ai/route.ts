@@ -22,9 +22,10 @@ const aiRequestSchema = z.object({
 export const POST = withAuth(async (req: NextRequest, { userId }) => {
   // Check API key
   if (!process.env.OPENAI_API_KEY) {
+    console.error('[AI Route] OPENAI_API_KEY is not set');
     return Response.json(
-      { error: 'AI not configured. Set OPENAI_API_KEY.' },
-      { status: 500 },
+      { error: 'The AI assistant is temporarily unavailable. Please try again later.' },
+      { status: 503 },
     );
   }
 

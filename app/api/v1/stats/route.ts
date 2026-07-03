@@ -50,67 +50,116 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
   const startDate = subtractDays(now, days);
   const startISO = dateISO(startDate);
 
-  // ─── Tasks completed in range ───────────────────────────────────────
-  const completedTasks = await db
-    .select({
-      count: sql<number>`count(*)::int`,
-      totalMinutes: sql<number>`coalesce(sum(${tasks.timeLoggedMinutes}), 0)::int`,
-    })
-    .from(tasks)
-    .where(
-      and(
-        eq(tasks.userId, userId),
-        eq(tasks.status, "done"),
-        gte(tasks.updatedAt, startDate),
+  // Activity heatmap window (last 365 days)
+  const yearStart = subtractDays(now, 364);
+  const yearStartISO = dateISO(yearStart);
+
+  // All seven aggregates are independent — run them concurrently
+  const [
+    completedTasks,
+    hoursByCat,
+    habitCompletionsInRange,
+    activeHabits,
+    tasksByDay,
+    yearHabitCompletions,
+    yearTaskCompletions,
+  ] = await Promise.all([
+    db
+      .select({
+        count: sql<number>`count(*)::int`,
+        totalMinutes: sql<number>`coalesce(sum(${tasks.timeLoggedMinutes}), 0)::int`,
+      })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.userId, userId),
+          eq(tasks.status, "done"),
+          gte(tasks.updatedAt, startDate),
+        ),
       ),
-    );
+    db
+      .select({
+        category: tasks.category,
+        totalMinutes: sql<number>`coalesce(sum(${tasks.timeLoggedMinutes}), 0)::int`,
+      })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.userId, userId),
+          gte(tasks.updatedAt, startDate),
+        ),
+      )
+      .groupBy(tasks.category),
+    db
+      .select({
+        date: habitCompletions.date,
+        habitId: habitCompletions.habitId,
+      })
+      .from(habitCompletions)
+      .where(
+        and(
+          eq(habitCompletions.userId, userId),
+          gte(habitCompletions.date, startISO),
+        ),
+      ),
+    db
+      .select({
+        id: habits.id,
+        name: habits.name,
+        section: habits.section,
+      })
+      .from(habits)
+      .where(and(eq(habits.userId, userId), eq(habits.active, true))),
+    db
+      .select({
+        day: sql<string>`date(${tasks.updatedAt})`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.userId, userId),
+          eq(tasks.status, "done"),
+          gte(tasks.updatedAt, startDate),
+        ),
+      )
+      .groupBy(sql`date(${tasks.updatedAt})`),
+    db
+      .select({
+        date: habitCompletions.date,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(habitCompletions)
+      .where(
+        and(
+          eq(habitCompletions.userId, userId),
+          gte(habitCompletions.date, yearStartISO),
+        ),
+      )
+      .groupBy(habitCompletions.date),
+    db
+      .select({
+        day: sql<string>`date(${tasks.updatedAt})`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.userId, userId),
+          eq(tasks.status, "done"),
+          gte(tasks.updatedAt, yearStart),
+        ),
+      )
+      .groupBy(sql`date(${tasks.updatedAt})`),
+  ]);
 
   const tasksCompleted = completedTasks[0]?.count ?? 0;
   const hoursFocused = Math.round(((completedTasks[0]?.totalMinutes ?? 0) / 60) * 10) / 10;
-
-  // ─── Hours by category ──────────────────────────────────────────────
-  const hoursByCat = await db
-    .select({
-      category: tasks.category,
-      totalMinutes: sql<number>`coalesce(sum(${tasks.timeLoggedMinutes}), 0)::int`,
-    })
-    .from(tasks)
-    .where(
-      and(
-        eq(tasks.userId, userId),
-        gte(tasks.updatedAt, startDate),
-      ),
-    )
-    .groupBy(tasks.category);
 
   const hours_by_category = hoursByCat.map((r) => ({
     category: r.category,
     hours: Math.round((r.totalMinutes / 60) * 10) / 10,
   }));
-
-  // ─── Habit completions in range ─────────────────────────────────────
-  const habitCompletionsInRange = await db
-    .select({
-      date: habitCompletions.date,
-      habitId: habitCompletions.habitId,
-    })
-    .from(habitCompletions)
-    .where(
-      and(
-        eq(habitCompletions.userId, userId),
-        gte(habitCompletions.date, startISO),
-      ),
-    );
-
-  // ─── Active habits ──────────────────────────────────────────────────
-  const activeHabits = await db
-    .select({
-      id: habits.id,
-      name: habits.name,
-      section: habits.section,
-    })
-    .from(habits)
-    .where(and(eq(habits.userId, userId), eq(habits.active, true)));
 
   // Habit completion rate
   const totalPossible = activeHabits.length * days;
@@ -120,22 +169,6 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
       : 0;
 
   // ─── Daily completions (task + habit) ───────────────────────────────
-  // Count tasks completed per day (by updated_at date)
-  const tasksByDay = await db
-    .select({
-      day: sql<string>`date(${tasks.updatedAt})`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(tasks)
-    .where(
-      and(
-        eq(tasks.userId, userId),
-        eq(tasks.status, "done"),
-        gte(tasks.updatedAt, startDate),
-      ),
-    )
-    .groupBy(sql`date(${tasks.updatedAt})`);
-
   const taskDayMap = new Map(tasksByDay.map((r) => [r.day, r.count]));
 
   // Habit completions by day
@@ -182,39 +215,6 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
   }
 
   // ─── Activity heatmap (last 365 days) ───────────────────────────────
-  // Get all habit completions for the last year
-  const yearStart = subtractDays(now, 364);
-  const yearStartISO = dateISO(yearStart);
-
-  const yearHabitCompletions = await db
-    .select({
-      date: habitCompletions.date,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(habitCompletions)
-    .where(
-      and(
-        eq(habitCompletions.userId, userId),
-        gte(habitCompletions.date, yearStartISO),
-      ),
-    )
-    .groupBy(habitCompletions.date);
-
-  const yearTaskCompletions = await db
-    .select({
-      day: sql<string>`date(${tasks.updatedAt})`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(tasks)
-    .where(
-      and(
-        eq(tasks.userId, userId),
-        eq(tasks.status, "done"),
-        gte(tasks.updatedAt, yearStart),
-      ),
-    )
-    .groupBy(sql`date(${tasks.updatedAt})`);
-
   const yearHabitMap = new Map(yearHabitCompletions.map((r) => [r.date, r.count]));
   const yearTaskMap = new Map(yearTaskCompletions.map((r) => [r.day, r.count]));
 

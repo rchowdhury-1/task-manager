@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
 import { updateCategorySchema } from "@/lib/validation/categories";
+import { isUniqueViolation } from "@/lib/db/errors";
 
 export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
   const id = params?.id;
@@ -15,17 +16,24 @@ export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
     return Response.json({ error: parsed.error.errors[0].message }, { status: 400 });
   }
 
-  const [row] = await db
-    .update(categories)
-    .set(parsed.data)
-    .where(and(eq(categories.id, id), eq(categories.userId, userId)))
-    .returning();
+  try {
+    const [row] = await db
+      .update(categories)
+      .set(parsed.data)
+      .where(and(eq(categories.id, id), eq(categories.userId, userId)))
+      .returning();
 
-  if (!row) {
-    return Response.json({ error: "Category not found" }, { status: 404 });
+    if (!row) {
+      return Response.json({ error: "Category not found" }, { status: 404 });
+    }
+
+    return Response.json(row);
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      return Response.json({ error: "You already have a topic with that name" }, { status: 409 });
+    }
+    throw err;
   }
-
-  return Response.json(row);
 });
 
 export const DELETE = withAuth(async (_req: NextRequest, { userId, params }) => {

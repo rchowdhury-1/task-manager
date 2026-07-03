@@ -8,19 +8,16 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-
-const LABELS: Record<string, string> = {
-  career: 'Career', lms: 'LMS', freelance: 'Freelance',
-  learning: 'Learning', uber: 'Uber', faith: 'Faith',
-};
+import { useCategoryMap } from '@/lib/api/hooks';
 
 interface Props {
   data: { category: string; hours: number }[];
 }
 
 export default function HoursByCategoryChart({ data }: Props) {
+  const categoryMap = useCategoryMap();
   const chartData = data.map(d => ({
-    name: LABELS[d.category] ?? d.category,
+    name: categoryMap[d.category]?.label ?? d.category,
     hours: d.hours,
   }));
 

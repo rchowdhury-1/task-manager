@@ -7,12 +7,12 @@ function getSecret(): string {
 }
 
 export function signToken(userId: string): string {
-  return jwt.sign({ userId }, getSecret(), { expiresIn: "30d" });
+  return jwt.sign({ userId }, getSecret(), { expiresIn: "30d", algorithm: "HS256" });
 }
 
 export function verifyToken(token: string): { userId: string } | null {
   try {
-    const payload = jwt.verify(token, getSecret()) as { userId: string };
+    const payload = jwt.verify(token, getSecret(), { algorithms: ["HS256"] }) as { userId: string };
     return { userId: payload.userId };
   } catch {
     return null;

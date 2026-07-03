@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, BarChart3 } from 'lucide-react';
-import { useStats, type StatsRange } from '@/lib/api/hooks';
+import { useStats, useCategoryMap, type StatsRange } from '@/lib/api/hooks';
 import { StatCell } from '@/components/StatCell';
 import { ActivityHeatmap } from '@/components/ActivityHeatmap';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -166,7 +166,10 @@ export default function StatsPage() {
           </div>
         </motion.div>
 
-        {/* AI Insight card */}
+        {/* AI Insight card — placeholder copy, so only show once there is real
+            activity to plausibly base it on (fabricated insight on an empty
+            account reads as fake). Replace with a computed insight later. */}
+        {summary.tasks_completed >= 5 && (
         <motion.div
           variants={fadeInUp}
           className="bg-[var(--color-crimson-soft)] border border-[var(--color-crimson-line)] rounded-xl p-5 md:p-6 flex items-start gap-4"
@@ -188,6 +191,7 @@ export default function StatsPage() {
             </div>
           </div>
         </motion.div>
+        )}
 
         {/* Daily completions */}
         <motion.div variants={fadeInUp} className="bg-surface border border-border rounded-xl p-5">
@@ -224,18 +228,14 @@ function EmptyChart({ message }: { message: string }) {
   );
 }
 
-const TAG_COLORS: Record<string, { bg: string; text: string }> = {
-  career:    { bg: 'bg-tag-blue-bg',   text: 'text-tag-blue' },
-  lms:       { bg: 'bg-tag-violet-bg', text: 'text-tag-violet' },
-  freelance: { bg: 'bg-tag-amber-bg',  text: 'text-tag-amber' },
-  learning:  { bg: 'bg-tag-green-bg',  text: 'text-tag-green' },
-  uber:      { bg: 'bg-tag-slate-bg',  text: 'text-tag-slate' },
-  faith:     { bg: 'bg-tag-rose-bg',   text: 'text-tag-rose' },
-};
-
-const LABELS: Record<string, string> = {
-  career: 'Career', lms: 'LMS', freelance: 'Freelance',
-  learning: 'Learning', uber: 'Uber', faith: 'Faith',
+// Swatch styling per topic colour (categories.colour column)
+const TAG_BY_COLOUR: Record<string, string> = {
+  blue: 'bg-tag-blue-bg',
+  violet: 'bg-tag-violet-bg',
+  amber: 'bg-tag-amber-bg',
+  green: 'bg-tag-green-bg',
+  slate: 'bg-tag-slate-bg',
+  rose: 'bg-tag-rose-bg',
 };
 
 function FocusAreasBreakdown({
@@ -243,8 +243,12 @@ function FocusAreasBreakdown({
 }: {
   data: { category: string; hours: number }[];
 }) {
+  const categoryMap = useCategoryMap();
   const total = data.reduce((sum, d) => sum + d.hours, 0);
   const sorted = [...data].sort((a, b) => b.hours - a.hours);
+  const toneFor = (slug: string) =>
+    TAG_BY_COLOUR[categoryMap[slug]?.colour ?? ''] ?? 'bg-tag-slate-bg';
+  const labelFor = (slug: string) => categoryMap[slug]?.label ?? slug;
 
   return (
     <div className="space-y-3">
@@ -253,11 +257,10 @@ function FocusAreasBreakdown({
           {sorted.map(d => {
             const pct = (d.hours / total) * 100;
             if (pct < 1) return null;
-            const tone = TAG_COLORS[d.category];
             return (
               <div
                 key={d.category}
-                className={`h-full ${tone?.bg ?? 'bg-surface-raised'}`}
+                className={`h-full ${toneFor(d.category)}`}
                 style={{ width: `${pct}%` }}
               />
             );
@@ -268,11 +271,10 @@ function FocusAreasBreakdown({
       <div className="space-y-2">
         {sorted.map(d => {
           const pct = total > 0 ? Math.round((d.hours / total) * 100) : 0;
-          const tone = TAG_COLORS[d.category];
           return (
             <div key={d.category} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-sm shrink-0 ${tone?.bg ?? 'bg-surface-raised'}`} />
-              <span className="text-xs text-primary flex-1">{LABELS[d.category] ?? d.category}</span>
+              <div className={`w-3 h-3 rounded-sm shrink-0 ${toneFor(d.category)}`} />
+              <span className="text-xs text-primary flex-1">{labelFor(d.category)}</span>
               <span className="text-xs font-medium text-secondary">{pct}%</span>
             </div>
           );

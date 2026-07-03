@@ -22,5 +22,9 @@ export const PATCH = withAuth(async (req: NextRequest, { userId }) => {
     .where(eq(users.id, userId))
     .returning({ notificationsEnabled: users.notificationsEnabled });
 
+  if (!updated) {
+    return Response.json({ error: 'User not found' }, { status: 404 });
+  }
+
   return Response.json({ notificationsEnabled: updated.notificationsEnabled });
 });

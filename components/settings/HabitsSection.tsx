@@ -62,7 +62,7 @@ function NewHabitForm({ onClose }: { onClose: () => void }) {
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Habit name\u2026"
+        placeholder={'Habit name\u2026'}
         autoFocus
         className="w-full px-3 py-2.5 text-[14px] bg-surface border border-border rounded-lg text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
       />

@@ -422,7 +422,7 @@ function MobileColumn({
             onChange={e => setNewTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Escape') { setAdding(false); setNewTitle(''); } }}
             onBlur={submitAdd}
-            placeholder="Task title\u2026"
+            placeholder={'Task title\u2026'}
             className="w-full px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </form>
@@ -512,7 +512,7 @@ function ColumnWithCreate({
               if (e.key === 'Escape') { setAdding(false); setNewTitle(''); }
             }}
             onBlur={submitAdd}
-            placeholder="Task title\u2026"
+            placeholder={'Task title\u2026'}
             className="w-full px-2 py-1.5 text-sm bg-surface border border-border rounded-md text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </form>

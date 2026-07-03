@@ -283,11 +283,6 @@ export function ListView({ categoryId, smartList, tasks }: ListViewProps) {
         <h1 className="text-[32px] md:text-[44px] font-semibold leading-[1.02] tracking-display text-primary">
           {title}
         </h1>
-        {activeCategory && (
-          <p className="text-[14px] md:text-[15px] text-secondary mt-2">
-            {/* Category description not stored yet — leave empty for now */}
-          </p>
-        )}
       </motion.div>
 
       {/* Toolbar */}

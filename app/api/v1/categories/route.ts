@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
 import { createCategorySchema } from "@/lib/validation/categories";
+import { isUniqueViolation } from "@/lib/db/errors";
 
 export const GET = withAuth(async (_req: NextRequest, { userId }) => {
   const rows = await db
@@ -22,10 +23,16 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     return Response.json({ error: parsed.error.errors[0].message }, { status: 400 });
   }
 
-  const [row] = await db
-    .insert(categories)
-    .values({ userId, ...parsed.data })
-    .returning();
-
-  return Response.json(row, { status: 201 });
+  try {
+    const [row] = await db
+      .insert(categories)
+      .values({ userId, ...parsed.data })
+      .returning();
+    return Response.json(row, { status: 201 });
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      return Response.json({ error: "You already have a topic with that name" }, { status: 409 });
+    }
+    throw err;
+  }
 });
