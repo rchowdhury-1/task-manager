@@ -1,6 +1,8 @@
 'use client';
 import { forwardRef } from 'react';
-import type { Task, Category } from '@/lib/types';
+import type { Task } from '@/lib/types';
+import { useCategoryMap } from '@/lib/api/hooks';
+import { colourStyle } from '@/lib/categories';
 import { formatTimeShort } from '@/lib/utils/dates';
 import { format, parseISO } from 'date-fns';
 
@@ -8,24 +10,6 @@ const PRIORITY_COLORS: Record<number, string> = {
   1: '#DC2626',
   2: '#F59E0B',
   3: '#10B981',
-};
-
-const CATEGORY_BORDER_COLORS: Record<Category, string> = {
-  career: 'var(--color-tag-blue)',
-  lms: 'var(--color-tag-violet)',
-  freelance: 'var(--color-tag-amber)',
-  learning: 'var(--color-tag-green)',
-  uber: 'var(--color-tag-slate)',
-  faith: 'var(--color-tag-rose)',
-};
-
-const CATEGORY_STYLES: Record<Category, { bg: string; text: string; bgDark: string; textDark: string }> = {
-  career:    { bg: 'bg-[#FFF7ED]', text: 'text-[#C2410C]', bgDark: 'dark:bg-[#431407]', textDark: 'dark:text-[#FB923C]' },
-  lms:       { bg: 'bg-[#EFF6FF]', text: 'text-[#1D4ED8]', bgDark: 'dark:bg-[#172554]', textDark: 'dark:text-[#60A5FA]' },
-  freelance: { bg: 'bg-[#EEF2FF]', text: 'text-[#4338CA]', bgDark: 'dark:bg-[#1E1B4B]', textDark: 'dark:text-[#818CF8]' },
-  learning:  { bg: 'bg-[#F5F3FF]', text: 'text-[#7C3AED]', bgDark: 'dark:bg-[#2E1065]', textDark: 'dark:text-[#A78BFA]' },
-  uber:      { bg: 'bg-[#F8FAFC]', text: 'text-[#475569]', bgDark: 'dark:bg-[#1E293B]', textDark: 'dark:text-[#94A3B8]' },
-  faith:     { bg: 'bg-[#FFFBEB]', text: 'text-[#92400E]', bgDark: 'dark:bg-[#451A03]', textDark: 'dark:text-[#FBBF24]' },
 };
 
 interface TaskCardProps {
@@ -51,14 +35,17 @@ function formatDay(dateStr: string): string {
 export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps & { listeners?: any; attributes?: any }>(
   function TaskCard({ task, onClick, isDragOverlay, style, listeners, attributes }, ref) {
     const isDone = task.status === 'done';
-    const catStyle = CATEGORY_STYLES[task.category] ?? CATEGORY_STYLES.career;
+    const categoryMap = useCategoryMap();
+    const category = categoryMap[task.category];
+    const catStyle = colourStyle(category?.colour);
+    const catLabel = category?.label ?? task.category;
 
     return (
       <div
         ref={ref}
         style={{
           ...style,
-          borderLeftColor: CATEGORY_BORDER_COLORS[task.category] ?? '#9CA3AF',
+          borderLeftColor: category ? catStyle.border : '#9CA3AF',
           opacity: isDragOverlay ? 0.9 : isDone ? 0.6 : 1,
         }}
         onClick={onClick}
@@ -81,7 +68,7 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps & { listeners?:
               ${catStyle.bg} ${catStyle.text} ${catStyle.bgDark} ${catStyle.textDark}
             `}
           >
-            {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
+            {catLabel.charAt(0).toUpperCase() + catLabel.slice(1)}
           </span>
           <span
             className="w-2 h-2 rounded-full shrink-0 mt-1"

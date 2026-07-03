@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
 import { queryKeys } from '@/lib/api/keys';
@@ -10,6 +11,17 @@ export function useCategories() {
     queryKey: queryKeys.categories(),
     queryFn: () => apiFetch<CategoryRecord[]>('/categories'),
   });
+}
+
+// Slug → CategoryRecord lookup for styling task badges/dots by the owning
+// topic's colour. Memoised per categories fetch.
+export function useCategoryMap(): Record<string, CategoryRecord> {
+  const { data } = useCategories();
+  return useMemo(() => {
+    const map: Record<string, CategoryRecord> = {};
+    data?.forEach((c) => { map[c.slug] = c; });
+    return map;
+  }, [data]);
 }
 
 export function useCreateCategory() {

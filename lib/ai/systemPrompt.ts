@@ -38,7 +38,16 @@ function buildDateTable(now: Date, timezone: string): string {
   return lines.join('\n');
 }
 
-export function buildSystemPrompt(now: Date, timezone: string = 'UTC'): string {
+export interface PromptCategory {
+  slug: string;
+  label: string;
+}
+
+export function buildSystemPrompt(
+  now: Date,
+  timezone: string = 'UTC',
+  userCategories: PromptCategory[] = [],
+): string {
   const parts = utcToLocalParts(now, timezone);
   const today = dateToISO(new Date(parts.year, parts.month - 1, parts.day));
   const dayOfWeek = DAY_NAMES[new Date(parts.year, parts.month - 1, parts.day).getDay()];
@@ -56,7 +65,11 @@ TWO TYPES OF SCHEDULED ITEMS:
 
 When the user says "remove X" or "delete X" and X could be either: check both the Tasks list AND the Recurring tasks list in the context below. Use delete_task for one-offs. Use delete_recurring for recurring items. If unsure, ask.
 
-Categories: career, lms, freelance, learning, uber, faith
+Categories (the user's own topics — use ONLY these slugs): ${
+    userCategories.length > 0
+      ? userCategories.map((c) => `${c.slug} ("${c.label}")`).join(', ')
+      : '(the user has no topics yet)'
+  }
 Priorities: 1 = urgent/today, 2 = this week, 3 = backlog
 Statuses: backlog, this_week, in_progress, done
 Habit sections: faith, body, growth
@@ -86,7 +99,9 @@ IMPORTANT: When scheduling tasks, always include the explicit ISO date in your r
 - Do not explain how you work or apologise.
 - If the user is ambiguous, prefer asking ONE clarifying question in your summary instead of guessing wildly.
 - When the user says "today", use ${today} as assigned_day.
-- When creating a task without an explicit category, default to "career".
+- When creating a task without an explicit category, default to the user's first topic${
+    userCategories.length > 0 ? ` ("${userCategories[0].slug}")` : ''
+  }.
 - When creating a habit without an explicit section, default to "growth".
 - If the user asks a question about their data (e.g. "what did I do today?"), answer from the context provided — do not call any tools.
 - All times the user mentions (e.g. "6pm", "9:30am") are in their timezone (${timezone}). Store scheduled_time as the user's local wall-clock time (HH:MM format). Do not convert.`;

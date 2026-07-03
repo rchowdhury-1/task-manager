@@ -3,13 +3,19 @@ import { EXECUTORS } from '@/lib/ai/executors';
 
 // ─── Mock DB helpers ────────────────────────────────────────────────────────
 
-function mockDb(returnValue: unknown = [{ id: 'test-id', title: 'Test' }]) {
+function mockDb(
+  returnValue: unknown = [{ id: 'test-id', title: 'Test' }],
+  // Rows returned by the categories lookup (select…orderBy) used for
+  // resolving/validating task categories against the user's own topics.
+  categoryRows: { slug: string }[] = [{ slug: 'learning' }, { slug: 'fitness' }],
+) {
   const returning = vi.fn().mockResolvedValue(returnValue);
   const onConflictDoUpdate = vi.fn().mockReturnValue({ returning });
   const onConflictDoNothing = vi.fn().mockReturnValue({ returning });
   const values = vi.fn().mockReturnValue({ returning, onConflictDoUpdate, onConflictDoNothing });
   const limit = vi.fn().mockResolvedValue(returnValue);
-  const whereForSelect = vi.fn().mockReturnValue({ limit, returning });
+  const orderBy = vi.fn().mockResolvedValue(categoryRows);
+  const whereForSelect = vi.fn().mockReturnValue({ limit, returning, orderBy });
   const from = vi.fn().mockReturnValue({ where: whereForSelect });
   const whereForUpdate = vi.fn().mockReturnValue({ returning });
   const whereForDelete = vi.fn().mockReturnValue({ returning });
@@ -20,8 +26,10 @@ function mockDb(returnValue: unknown = [{ id: 'test-id', title: 'Test' }]) {
     update: vi.fn().mockReturnValue({ set }),
     delete: vi.fn().mockReturnValue({ where: whereForDelete }),
     select: vi.fn().mockReturnValue({ from }),
-    _mocks: { returning, values, set, whereForUpdate, whereForDelete, whereForSelect, limit },
-  } as unknown as Parameters<typeof EXECUTORS[string]>[2];
+    _mocks: { returning, values, set, whereForUpdate, whereForDelete, whereForSelect, limit, orderBy },
+  } as unknown as Parameters<typeof EXECUTORS[string]>[2] & {
+    _mocks: Record<string, ReturnType<typeof vi.fn>>;
+  };
 }
 
 const USER_ID = 'user-123';
@@ -41,9 +49,36 @@ describe('create_task', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('rejects invalid category', async () => {
+  it('rejects a category the user does not own', async () => {
     const db = mockDb();
-    const result = await EXECUTORS.create_task(USER_ID, { title: 'Test', category: 'invalid' }, db);
+    const result = await EXECUTORS.create_task(USER_ID, { title: 'Test', category: 'career' }, db);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain('Unknown topic');
+  });
+
+  it('rejects a malformed category slug', async () => {
+    const db = mockDb();
+    const result = await EXECUTORS.create_task(USER_ID, { title: 'Test', category: 'Not A Slug!' }, db);
+    expect(result.ok).toBe(false);
+  });
+
+  it('accepts a category the user owns', async () => {
+    const db = mockDb();
+    const result = await EXECUTORS.create_task(USER_ID, { title: 'Test', category: 'fitness' }, db);
+    expect(result.ok).toBe(true);
+    expect(db._mocks.values).toHaveBeenCalledWith(expect.objectContaining({ category: 'fitness' }));
+  });
+
+  it('defaults to the first topic when no category given', async () => {
+    const db = mockDb();
+    const result = await EXECUTORS.create_task(USER_ID, { title: 'Test' }, db);
+    expect(result.ok).toBe(true);
+    expect(db._mocks.values).toHaveBeenCalledWith(expect.objectContaining({ category: 'learning' }));
+  });
+
+  it('errors when the user has no topics at all', async () => {
+    const db = mockDb(undefined, []);
+    const result = await EXECUTORS.create_task(USER_ID, { title: 'Test' }, db);
     expect(result.ok).toBe(false);
   });
 });
@@ -164,9 +199,19 @@ describe('create_recurring_task', () => {
     const result = await EXECUTORS.create_recurring_task(USER_ID, {
       title: 'Daily standup',
       days_of_week: [1, 2, 3, 4, 5],
-      category: 'career',
+      category: 'learning',
     }, db);
     expect(result.ok).toBe(true);
+  });
+
+  it('rejects a category the user does not own', async () => {
+    const db = mockDb();
+    const result = await EXECUTORS.create_recurring_task(USER_ID, {
+      title: 'Daily standup',
+      days_of_week: [1, 2, 3],
+      category: 'uber',
+    }, db);
+    expect(result.ok).toBe(false);
   });
 
   it('rejects missing days_of_week', async () => {

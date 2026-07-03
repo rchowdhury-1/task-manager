@@ -36,6 +36,13 @@
       "when": 1780269199935,
       "tag": "0004_stormy_millenium_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783096298003,
+      "tag": "0005_unlock_system_categories",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,9 @@ function nextWeekday(target: number): string {
   return toISODate(d);
 }
 
+// The user's topic slugs, as passed by the UI from the categories table
+const SLUGS = ['learning', 'fitness', 'errands', 'projects'];
+
 describe('parseQuickAdd', () => {
   // 1. Plain title only
   it('parses plain title', () => {
@@ -22,18 +25,30 @@ describe('parseQuickAdd', () => {
     expect(result.priority).toBeUndefined();
   });
 
-  // 2. Title with #category
-  it('parses #career category', () => {
-    const result = parseQuickAdd('Build feature #career');
+  // 2. Title with a #topic the user owns
+  it('parses an owned #topic', () => {
+    const result = parseQuickAdd('Build feature #projects', SLUGS);
     expect(result.title).toBe('Build feature');
-    expect(result.category).toBe('career');
+    expect(result.category).toBe('projects');
   });
 
-  // 3. Title with #lms category
-  it('parses #lms category', () => {
-    const result = parseQuickAdd('Study #lms');
-    expect(result.title).toBe('Study');
-    expect(result.category).toBe('lms');
+  // 3. Custom (user-created) topic slugs work too
+  it('parses a custom topic slug', () => {
+    const result = parseQuickAdd('Water plants #home-garden', ['home-garden']);
+    expect(result.title).toBe('Water plants');
+    expect(result.category).toBe('home-garden');
+  });
+
+  // 3b. Without a slug list, any slug-shaped tag is accepted (server validates)
+  it('accepts any slug-shaped tag when no list is given', () => {
+    const result = parseQuickAdd('Study #anything');
+    expect(result.category).toBe('anything');
+  });
+
+  // 3c. Tag matching is case-insensitive, normalised to lowercase
+  it('normalises tag case', () => {
+    const result = parseQuickAdd('Run #Fitness', SLUGS);
+    expect(result.category).toBe('fitness');
   });
 
   // 4. Priority !1
@@ -127,18 +142,18 @@ describe('parseQuickAdd', () => {
 
   // 18. Full combination
   it('parses full combination', () => {
-    const result = parseQuickAdd('Fix bug #career !1 today 2h 9am');
+    const result = parseQuickAdd('Fix bug #learning !1 today 2h 9am', SLUGS);
     expect(result.title).toBe('Fix bug');
-    expect(result.category).toBe('career');
+    expect(result.category).toBe('learning');
     expect(result.priority).toBe(1);
     expect(result.assignedDay).toBe(toISODate(new Date()));
     expect(result.durationMinutes).toBe(120);
     expect(result.scheduledTime).toBe('09:00');
   });
 
-  // 19. Invalid category stays in title
-  it('keeps #unknown in title', () => {
-    const result = parseQuickAdd('Task #unknown');
+  // 19. Tag not in the user's topics stays in the title
+  it('keeps a non-owned #tag in the title', () => {
+    const result = parseQuickAdd('Task #unknown', SLUGS);
     expect(result.title).toBe('Task #unknown');
     expect(result.category).toBeUndefined();
   });

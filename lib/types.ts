@@ -1,6 +1,8 @@
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-export type Category = 'career' | 'lms' | 'freelance' | 'learning' | 'uber' | 'faith';
+// Task categories ("topics") are per-user DB rows referenced by slug — any
+// lowercase slug string is valid; ownership is enforced server-side.
+export type Category = string;
 export type Priority = 1 | 2 | 3;
 export type Status = 'backlog' | 'this_week' | 'in_progress' | 'done';
 export type DayFocus = 'job_hunt' | 'lms' | 'freelance' | 'learning' | 'rest' | 'flex';

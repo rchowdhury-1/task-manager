@@ -1,13 +1,16 @@
+'use client';
 import type { Category } from '@/lib/types';
+import { useCategoryMap } from '@/lib/api/hooks';
 import { formatTimeShort, addTime } from '@/lib/utils/dates';
 
-const CATEGORY_TAG: Record<Category, { bg: string; text: string; label: string; key: string }> = {
-  career:    { bg: 'bg-tag-blue-bg',   text: 'text-tag-blue',   label: 'Career',    key: 'blue' },
-  lms:       { bg: 'bg-tag-violet-bg', text: 'text-tag-violet', label: 'LMS',       key: 'violet' },
-  freelance: { bg: 'bg-tag-amber-bg',  text: 'text-tag-amber',  label: 'Freelance', key: 'amber' },
-  learning:  { bg: 'bg-tag-green-bg',  text: 'text-tag-green',  label: 'Learning',  key: 'green' },
-  uber:      { bg: 'bg-tag-slate-bg',  text: 'text-tag-slate',  label: 'Uber Eats', key: 'slate' },
-  faith:     { bg: 'bg-tag-rose-bg',   text: 'text-tag-rose',   label: 'Faith',     key: 'rose' },
+// Chip styling per palette colour (categories.colour column).
+const TAG_BY_COLOUR: Record<string, { bg: string; text: string }> = {
+  blue:   { bg: 'bg-tag-blue-bg',   text: 'text-tag-blue' },
+  violet: { bg: 'bg-tag-violet-bg', text: 'text-tag-violet' },
+  amber:  { bg: 'bg-tag-amber-bg',  text: 'text-tag-amber' },
+  green:  { bg: 'bg-tag-green-bg',  text: 'text-tag-green' },
+  slate:  { bg: 'bg-tag-slate-bg',  text: 'text-tag-slate' },
+  rose:   { bg: 'bg-tag-rose-bg',   text: 'text-tag-rose' },
 };
 
 interface ScheduleRowProps {
@@ -31,7 +34,10 @@ export function ScheduleRow({
   isRecurring,
   onClick,
 }: ScheduleRowProps) {
-  const tag = CATEGORY_TAG[category];
+  const categoryMap = useCategoryMap();
+  const cat = categoryMap[category];
+  const colourKey = cat?.colour && TAG_BY_COLOUR[cat.colour] ? cat.colour : 'slate';
+  const tag = { ...TAG_BY_COLOUR[colourKey], label: cat?.label ?? category, key: colourKey };
   const isDone = status === 'done';
   const isInProgress = status === 'in_progress';
 

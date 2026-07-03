@@ -1,17 +1,25 @@
 import { z } from "zod";
+import { CATEGORY_SLUG_REGEX } from "@/lib/categories";
 
 const nextStepSchema = z.object({
   text: z.string(),
   done: z.boolean(),
 });
 
-const CATEGORIES = ["career", "lms", "freelance", "learning", "uber", "faith"] as const;
 const STATUSES = ["backlog", "this_week", "in_progress", "done"] as const;
+
+// Categories are per-user rows; ownership of the slug is verified in the
+// route handlers against the categories table.
+const categorySlug = z
+  .string()
+  .min(1)
+  .max(50)
+  .regex(CATEGORY_SLUG_REGEX, "Category must be a lowercase slug");
 
 export const createTaskSchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().optional(),
-  category: z.enum(CATEGORIES),
+  category: categorySlug,
   status: z.enum(STATUSES).default("backlog"),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(2),
   assigned_day: z

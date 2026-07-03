@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
 import { createTaskSchema } from "@/lib/validation/tasks";
+import { userHasCategory } from "@/lib/categories-server";
 
 // Status ordering: in_progress first, backlog last
 const statusOrder = sql`CASE ${tasks.status}
@@ -31,6 +32,9 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
   }
 
   const d = parsed.data;
+  if (!(await userHasCategory(db, userId, d.category))) {
+    return Response.json({ error: `Unknown topic "${d.category}"` }, { status: 400 });
+  }
   const [task] = await db
     .insert(tasks)
     .values({

@@ -5,11 +5,13 @@ import { toast } from 'sonner';
 import {
   useToday,
   useMe,
+  useCategories,
   useCreateTask,
   useCompleteHabit,
   useUncompleteHabit,
   useCompletions,
 } from '@/lib/api/hooks';
+import { WelcomeHint } from '@/components/WelcomeHint';
 import { useActiveTask } from '@/lib/state/activeTask';
 import { QuickAddInput, type ParsedTask } from '@/components/QuickAddInput';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -72,6 +74,7 @@ export default function TodayPage() {
   const sundayStr = week[6];
 
   const { data: me } = useMe();
+  const { data: categories } = useCategories();
   const { data, isLoading, error, refetch } = useToday(today);
   const { data: weekCompletions } = useCompletions(mondayStr, sundayStr);
   const createTask = useCreateTask();
@@ -88,10 +91,15 @@ export default function TodayPage() {
   }, [data?.completions, weekCompletions]);
 
   const handleQuickAdd = (parsed: ParsedTask) => {
+    const defaultCategory = categories?.[0]?.slug;
+    if (!parsed.category && !defaultCategory) {
+      toast.error('Create a topic first (Lists → New topic).');
+      return;
+    }
     createTask.mutate(
       {
         title: parsed.title,
-        category: parsed.category ?? 'career',
+        category: parsed.category ?? defaultCategory!,
         priority: parsed.priority ?? 2,
         status: 'backlog',
         assigned_day: parsed.assignedDay ?? today,
@@ -217,6 +225,9 @@ export default function TodayPage() {
           {greeting()}{name ? <>, <em className="font-display italic text-accent not-italic">{name}.</em></> : '.'}
         </h1>
       </motion.div>
+
+      {/* ── First-run welcome hint ────────────────────────────────────── */}
+      <WelcomeHint />
 
       {/* ── Stat Rundown ──────────────────────────────────────────────── */}
       <motion.div

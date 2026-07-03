@@ -1,6 +1,16 @@
 import type { ChatCompletionTool } from 'openai/resources/chat/completions';
 
-export const TOOLS: ChatCompletionTool[] = [
+// Tool schemas are built per-request because the category enum is the
+// requesting user's own topic slugs (fetched from the categories table).
+export function buildTools(categorySlugs: string[]): ChatCompletionTool[] {
+  // If the user somehow has no topics, fall back to a plain string so the
+  // schema stays valid; executors still verify ownership.
+  const categoryProp =
+    categorySlugs.length > 0
+      ? { type: 'string' as const, enum: categorySlugs }
+      : { type: 'string' as const, description: "One of the user's topic slugs" };
+
+  return [
   {
     type: 'function',
     function: {
@@ -11,10 +21,7 @@ export const TOOLS: ChatCompletionTool[] = [
         type: 'object',
         properties: {
           title: { type: 'string', description: 'Task title' },
-          category: {
-            type: 'string',
-            enum: ['career', 'lms', 'freelance', 'learning', 'uber', 'faith'],
-          },
+          category: categoryProp,
           priority: { type: 'integer', enum: [1, 2, 3], description: '1=urgent, 2=this week, 3=backlog' },
           status: {
             type: 'string',
@@ -42,10 +49,7 @@ export const TOOLS: ChatCompletionTool[] = [
         properties: {
           id: { type: 'string', description: 'Task UUID' },
           title: { type: 'string' },
-          category: {
-            type: 'string',
-            enum: ['career', 'lms', 'freelance', 'learning', 'uber', 'faith'],
-          },
+          category: categoryProp,
           priority: { type: 'integer', enum: [1, 2, 3] },
           status: {
             type: 'string',
@@ -180,10 +184,7 @@ export const TOOLS: ChatCompletionTool[] = [
         type: 'object',
         properties: {
           title: { type: 'string' },
-          category: {
-            type: 'string',
-            enum: ['career', 'lms', 'freelance', 'learning', 'uber', 'faith'],
-          },
+          category: categoryProp,
           priority: { type: 'integer', enum: [1, 2, 3] },
           duration_minutes: { type: 'integer', minimum: 1, maximum: 1440 },
           scheduled_time: { type: 'string', description: 'HH:MM (24h)' },
@@ -215,3 +216,4 @@ export const TOOLS: ChatCompletionTool[] = [
     },
   },
 ];
+}

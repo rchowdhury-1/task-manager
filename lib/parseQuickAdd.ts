@@ -1,15 +1,12 @@
-type Category = 'career' | 'lms' | 'freelance' | 'learning' | 'uber' | 'faith';
-
 export interface ParsedTask {
   title: string;
-  category?: Category;
+  category?: string;
   priority?: 1 | 2 | 3;
   assignedDay?: string;
   scheduledTime?: string;
   durationMinutes?: number;
 }
 
-const CATEGORIES: Category[] = ['career', 'lms', 'freelance', 'learning', 'uber', 'faith'];
 const DAY_MAP: Record<string, number> = {
   sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
 };
@@ -26,21 +23,24 @@ function nextWeekday(target: number): string {
   return toISODate(d);
 }
 
-export function parseQuickAdd(text: string): ParsedTask {
+// `categorySlugs` is the user's own topic slugs (from the categories table).
+// When provided, only those slugs are recognised as #tags; when omitted, any
+// slug-shaped #tag is accepted (server still validates ownership).
+export function parseQuickAdd(text: string, categorySlugs?: string[]): ParsedTask {
   let remaining = text;
-  let category: Category | undefined;
+  let category: string | undefined;
   let priority: 1 | 2 | 3 | undefined;
   let assignedDay: string | undefined;
   let scheduledTime: string | undefined;
   let durationMinutes: number | undefined;
 
-  // Category: #career etc
-  for (const cat of CATEGORIES) {
-    const re = new RegExp(`#${cat}\\b`, 'i');
-    if (re.test(remaining)) {
-      category = cat;
-      remaining = remaining.replace(re, '').trim();
-      break;
+  // Category: #<topic-slug>
+  const catMatch = remaining.match(/#([a-z0-9_-]+)\b/i);
+  if (catMatch) {
+    const slug = catMatch[1].toLowerCase();
+    if (!categorySlugs || categorySlugs.includes(slug)) {
+      category = slug;
+      remaining = remaining.replace(catMatch[0], '').trim();
     }
   }
 

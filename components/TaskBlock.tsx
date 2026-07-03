@@ -1,11 +1,13 @@
+'use client';
 import { KeyboardEvent } from 'react';
+import { useCategoryMap } from '@/lib/api/hooks';
+import { colourStyle } from '@/lib/categories';
 
-type Category = 'career' | 'lms' | 'freelance' | 'learning' | 'uber' | 'faith';
 type Status = 'backlog' | 'this_week' | 'in_progress' | 'done';
 
 interface TaskBlockProps {
   title: string;
-  category: Category;
+  category: string;
   priority: 1 | 2 | 3;
   durationMinutes: number;
   scheduledTime?: string;
@@ -35,15 +37,6 @@ const STATUS_LABELS: Record<Status, string> = {
   done: 'Done',
 };
 
-const CATEGORY_STYLES: Record<Category, { bg: string; text: string; bgDark: string; textDark: string }> = {
-  career:    { bg: 'bg-[#FFF7ED]', text: 'text-[#C2410C]', bgDark: 'dark:bg-[#431407]', textDark: 'dark:text-[#FB923C]' },
-  lms:       { bg: 'bg-[#EFF6FF]', text: 'text-[#1D4ED8]', bgDark: 'dark:bg-[#172554]', textDark: 'dark:text-[#60A5FA]' },
-  freelance: { bg: 'bg-[#EEF2FF]', text: 'text-[#4338CA]', bgDark: 'dark:bg-[#1E1B4B]', textDark: 'dark:text-[#818CF8]' },
-  learning:  { bg: 'bg-[#F5F3FF]', text: 'text-[#7C3AED]', bgDark: 'dark:bg-[#2E1065]', textDark: 'dark:text-[#A78BFA]' },
-  uber:      { bg: 'bg-[#F8FAFC]', text: 'text-[#475569]', bgDark: 'dark:bg-[#1E293B]', textDark: 'dark:text-[#94A3B8]' },
-  faith:     { bg: 'bg-[#FFFBEB]', text: 'text-[#92400E]', bgDark: 'dark:bg-[#451A03]', textDark: 'dark:text-[#FBBF24]' },
-};
-
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -65,7 +58,8 @@ export function TaskBlock({
 }: TaskBlockProps) {
   const height = Math.max(40, durationMinutes * pixelsPerMinute);
   const isDone = status === 'done';
-  const catStyle = CATEGORY_STYLES[category];
+  const categoryMap = useCategoryMap();
+  const catStyle = colourStyle(categoryMap[category]?.colour);
 
   const handleKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -123,7 +117,7 @@ export function TaskBlock({
             ${catStyle.bg} ${catStyle.text} ${catStyle.bgDark} ${catStyle.textDark}
           `}
         >
-          {category}
+          {categoryMap[category]?.label ?? category}
         </span>
       </div>
 

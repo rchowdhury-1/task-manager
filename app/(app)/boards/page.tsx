@@ -3,9 +3,6 @@
 // same column is not persisted -- the next refetch will revert to DB order.
 // If true manual ordering is needed, add a sort_order/position column in 4d.
 
-// NOTE: Filter tabs only show the 6 system categories. Custom categories
-// created via Lists are not yet surfaced here. This is a known gap.
-
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -23,7 +20,8 @@ import {
   type DragStartEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import { useTasks, useCreateTask, useUpdateTask } from '@/lib/api/hooks';
+import { useTasks, useCreateTask, useUpdateTask, useCategories } from '@/lib/api/hooks';
+import { colourStyle } from '@/lib/categories';
 import { useActiveTask } from '@/lib/state/activeTask';
 import { TaskCard } from '@/components/TaskCard';
 import { resolveDropTarget } from '@/lib/utils/board';
@@ -40,21 +38,6 @@ const COLUMNS: { id: Status; label: string; dot?: string }[] = [
   { id: 'in_progress', label: 'IN PROGRESS', dot: 'bg-green-500' },
   { id: 'done', label: 'DONE' },
 ];
-
-const ALL_CATEGORIES: Category[] = ['career', 'lms', 'freelance', 'learning', 'uber', 'faith'];
-const CATEGORY_LABELS: Record<Category, string> = {
-  career: 'Career', lms: 'LMS', freelance: 'Freelance',
-  learning: 'Learning', uber: 'Uber', faith: 'Faith',
-};
-
-const CATEGORY_DOT_COLORS: Record<Category, string> = {
-  career: 'bg-tag-blue',
-  lms: 'bg-tag-violet',
-  freelance: 'bg-tag-amber',
-  learning: 'bg-tag-green',
-  uber: 'bg-tag-slate',
-  faith: 'bg-tag-rose',
-};
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -102,6 +85,7 @@ export default function BoardsPage() {
   useEffect(() => { document.title = 'Boards \u00b7 Personal OS'; }, []);
 
   const { data: tasks, isLoading, error, refetch } = useTasks();
+  const { data: categories } = useCategories();
   const updateTask = useUpdateTask();
   const createTask = useCreateTask();
   const { setActiveTaskId } = useActiveTask();
@@ -119,11 +103,20 @@ export default function BoardsPage() {
 
   const allTasks = tasks ?? [];
 
-  // Categories that actually have tasks
-  const presentCategories = useMemo(() =>
-    ALL_CATEGORIES.filter(c => allTasks.some(t => t.category === c)),
-    [allTasks]
-  );
+  // Categories that actually have tasks. Tasks whose topic was deleted keep
+  // their slug and get a fallback label/colour so they never disappear.
+  const presentCategories = useMemo(() => {
+    const slugsWithTasks = [...new Set(allTasks.map(t => t.category))];
+    return slugsWithTasks.map(slug => {
+      const cat = categories?.find(c => c.slug === slug);
+      return {
+        slug,
+        label: cat?.label ?? slug,
+        dot: colourStyle(cat?.colour).dot,
+        sortOrder: cat?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+      };
+    }).sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label));
+  }, [allTasks, categories]);
 
   // Filtered tasks
   const filteredTasks = useMemo(() =>
@@ -186,10 +179,16 @@ export default function BoardsPage() {
 
   function handleCreateInColumn(status: Status, title: string) {
     if (!title.trim()) return;
+    const defaultCategory =
+      filters.size === 1 ? [...filters][0] : categories?.[0]?.slug;
+    if (!defaultCategory) {
+      toast.error('Create a topic first (Lists → New topic).');
+      return;
+    }
     createTask.mutate(
       {
         title: title.trim(),
-        category: filters.size === 1 ? [...filters][0] : 'career',
+        category: defaultCategory,
         priority: 2,
         status,
         duration_minutes: 60,
@@ -282,20 +281,20 @@ export default function BoardsPage() {
           </button>
           {presentCategories.map(cat => (
             <button
-              key={cat}
-              onClick={() => toggleFilter(cat)}
+              key={cat.slug}
+              onClick={() => toggleFilter(cat.slug)}
               className={`
                 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors
-                ${filters.has(cat)
+                ${filters.has(cat.slug)
                   ? 'bg-page border border-border shadow-sm text-primary'
                   : 'text-secondary hover:text-primary border border-transparent'
                 }
               `}
             >
-              <span className={`w-2 h-2 rounded-full ${CATEGORY_DOT_COLORS[cat]}`} />
-              {CATEGORY_LABELS[cat]}
+              <span className={`w-2 h-2 rounded-full ${cat.dot}`} />
+              {cat.label}
               <span className="font-mono text-[10.5px] text-tertiary">
-                {allTasks.filter(t => t.category === cat).length}
+                {allTasks.filter(t => t.category === cat.slug).length}
               </span>
             </button>
           ))}

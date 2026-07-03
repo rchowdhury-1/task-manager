@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { recurringTasks } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
 import { createRecurringSchema } from "@/lib/validation/recurring";
+import { userHasCategory } from "@/lib/categories-server";
 
 export const GET = withAuth(async (_req: NextRequest, { userId }) => {
   const rows = await db
@@ -22,6 +23,9 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
   }
 
   const d = parsed.data;
+  if (!(await userHasCategory(db, userId, d.category))) {
+    return Response.json({ error: `Unknown topic "${d.category}"` }, { status: 400 });
+  }
   const [recurring] = await db
     .insert(recurringTasks)
     .values({

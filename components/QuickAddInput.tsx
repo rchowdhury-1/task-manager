@@ -2,6 +2,7 @@
 import { useState, useRef, KeyboardEvent } from 'react';
 import { HelpCircle, ArrowRight } from 'lucide-react';
 import { parseQuickAdd, type ParsedTask } from '@/lib/parseQuickAdd';
+import { useCategories } from '@/lib/api/hooks';
 export type { ParsedTask } from '@/lib/parseQuickAdd';
 export { parseQuickAdd } from '@/lib/parseQuickAdd';
 
@@ -39,14 +40,19 @@ interface QuickAddInputProps {
 }
 
 export function QuickAddInput({
-  placeholder = 'Add task… #career !1 today 1h 9am',
+  placeholder,
   onSubmit,
 }: QuickAddInputProps) {
   const [raw, setRaw] = useState('');
   const [showHelp, setShowHelp] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { data: categories } = useCategories();
 
-  const parsed = parseQuickAdd(raw);
+  const slugs = categories?.map(c => c.slug) ?? [];
+  const exampleSlug = slugs[0] ?? 'topic';
+  const effectivePlaceholder = placeholder ?? `Add task… #${exampleSlug} !1 today 1h 9am`;
+
+  const parsed = parseQuickAdd(raw, slugs);
   const chips = getChips(parsed);
   const hasContent = raw.trim().length > 0;
 
@@ -94,7 +100,7 @@ export function QuickAddInput({
             value={raw}
             onChange={e => setRaw(e.target.value)}
             onKeyDown={handleKey}
-            placeholder={placeholder}
+            placeholder={effectivePlaceholder}
             rows={1}
             style={{ resize: 'none', maxHeight: '4.5rem' }}
             className="
@@ -136,7 +142,7 @@ export function QuickAddInput({
           bg-surface-raised border border-border rounded-lg shadow-lg
           text-[11px] text-secondary space-y-1
         ">
-          <p><span className="font-semibold text-primary">#career</span> — category</p>
+          <p><span className="font-semibold text-primary">#{exampleSlug}</span> — topic</p>
           <p><span className="font-semibold text-primary">!1 !2 !3</span> — priority</p>
           <p><span className="font-semibold text-primary">today tomorrow mon…sun</span> — day</p>
           <p><span className="font-semibold text-primary">1h 30m</span> — duration</p>

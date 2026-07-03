@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Plus, List, Zap, Calendar, Clock, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import { useCategories, useCreateCategory, useDeleteCategory } from '@/lib/api/hooks';
 import { SMART_LISTS, type SmartListKey } from '@/lib/lists/smartLists';
+import { CATEGORY_ICON_EMOJI, DEFAULT_CATEGORY_ICON } from '@/lib/categories';
 import type { Task, CategoryRecord } from '@/lib/types';
 
 const SMART_LIST_ICONS: Record<SmartListKey, typeof List> = {
@@ -83,12 +84,7 @@ export function CategorySidebar({
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className={`w-6 h-6 rounded-md ${tone.bg} ${tone.text} flex items-center justify-center shrink-0`}>
                   <span className="text-[11px]">
-                    {cat.icon === 'briefcase' ? '💼' :
-                     cat.icon === 'book' ? '📖' :
-                     cat.icon === 'code' ? '💻' :
-                     cat.icon === 'layers' ? '📚' :
-                     cat.icon === 'truck' ? '🚚' :
-                     cat.icon === 'heart' ? '❤️' : '📁'}
+                    {CATEGORY_ICON_EMOJI[cat.icon ?? ''] ?? DEFAULT_CATEGORY_ICON}
                   </span>
                 </span>
                 <span className={`text-[14px] truncate ${isActive ? 'font-semibold text-primary' : 'font-medium text-primary'}`}>

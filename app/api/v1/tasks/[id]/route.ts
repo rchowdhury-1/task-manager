@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { tasks } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
 import { updateTaskSchema } from "@/lib/validation/tasks";
+import { userHasCategory } from "@/lib/categories-server";
 import { isValidUUID } from "@/lib/utils/validate";
 
 const NOT_FOUND = Response.json({ error: "Not found" }, { status: 404 });
@@ -33,6 +34,9 @@ export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
   }
 
   const d = parsed.data;
+  if (d.category !== undefined && !(await userHasCategory(db, userId, d.category))) {
+    return Response.json({ error: `Unknown topic "${d.category}"` }, { status: 400 });
+  }
   const set: Record<string, unknown> = { updatedAt: new Date() };
 
   if (d.title !== undefined)            set.title = d.title;

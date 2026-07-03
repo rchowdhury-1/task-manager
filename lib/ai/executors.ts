@@ -10,6 +10,8 @@ import {
 } from '@/lib/db/schema';
 import type { DB } from '@/lib/db';
 import { todayInTimezone } from '@/lib/utils/timezone';
+import { CATEGORY_SLUG_REGEX } from '@/lib/categories';
+import { getUserCategorySlugs } from '@/lib/categories-server';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -25,7 +27,6 @@ type ExecutorFn = (
 
 // ─── Shared enums ───────────────────────────────────────────────────────────
 
-const CATEGORIES = ['career', 'lms', 'freelance', 'learning', 'uber', 'faith'] as const;
 const STATUSES = ['backlog', 'this_week', 'in_progress', 'done'] as const;
 const SECTIONS = ['faith', 'body', 'growth'] as const;
 const TIMES_OF_DAY = ['morning', 'evening', 'anytime'] as const;
@@ -33,9 +34,34 @@ const FOCUS_AREAS = ['job_hunt', 'lms', 'freelance', 'learning', 'rest', 'flex']
 
 // ─── Schemas (lightweight, AI-facing) ───────────────────────────────────────
 
+const categorySlug = z.string().min(1).max(50).regex(CATEGORY_SLUG_REGEX);
+
+// Resolves and validates the category for create/update calls against the
+// user's own topics. Returns an error string the model can act on, or the
+// resolved slug (defaulting to the user's first topic when none was given).
+async function resolveCategory(
+  userId: string,
+  db: DB,
+  requested: string | undefined,
+  required: boolean,
+): Promise<{ slug?: string; error?: string }> {
+  const slugs = await getUserCategorySlugs(db, userId);
+  if (requested !== undefined) {
+    if (!slugs.includes(requested)) {
+      return { error: `Unknown topic "${requested}". The user's topics are: ${slugs.join(', ') || '(none)'}` };
+    }
+    return { slug: requested };
+  }
+  if (!required) return {};
+  if (slugs.length === 0) {
+    return { error: 'The user has no topics yet. Ask them to create a topic first.' };
+  }
+  return { slug: slugs[0] };
+}
+
 const createTaskArgs = z.object({
   title: z.string().min(1).max(500),
-  category: z.enum(CATEGORIES).default('career'),
+  category: categorySlug.optional(),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(2),
   status: z.enum(STATUSES).default('backlog'),
   assigned_day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -48,7 +74,7 @@ const createTaskArgs = z.object({
 const updateTaskArgs = z.object({
   id: z.string().uuid(),
   title: z.string().min(1).max(500).optional(),
-  category: z.enum(CATEGORIES).optional(),
+  category: categorySlug.optional(),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   status: z.enum(STATUSES).optional(),
   assigned_day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -85,7 +111,7 @@ const setDayRuleArgs = z.object({
 
 const createRecurringArgs = z.object({
   title: z.string().min(1).max(500),
-  category: z.enum(CATEGORIES).default('career'),
+  category: categorySlug.optional(),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(2),
   duration_minutes: z.number().int().min(1).max(1440).default(60),
   scheduled_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
@@ -99,10 +125,12 @@ async function createTask(userId: string, args: Record<string, unknown>, db: DB)
   const parsed = createTaskArgs.safeParse(args);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const d = parsed.data;
+  const cat = await resolveCategory(userId, db, d.category, true);
+  if (cat.error) return { ok: false, error: cat.error };
   const [task] = await db.insert(tasks).values({
     userId,
     title: d.title,
-    category: d.category,
+    category: cat.slug!,
     priority: d.priority,
     status: d.status,
     assignedDay: d.assigned_day,
@@ -118,6 +146,11 @@ async function updateTask(userId: string, args: Record<string, unknown>, db: DB)
   const parsed = updateTaskArgs.safeParse(args);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const { id, ...fields } = parsed.data;
+
+  if (fields.category !== undefined) {
+    const cat = await resolveCategory(userId, db, fields.category, false);
+    if (cat.error) return { ok: false, error: cat.error };
+  }
 
   // Build set object with only provided fields
   const set: Record<string, unknown> = { updatedAt: new Date() };
@@ -249,11 +282,13 @@ async function createRecurring(userId: string, args: Record<string, unknown>, db
   const parsed = createRecurringArgs.safeParse(args);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const d = parsed.data;
+  const cat = await resolveCategory(userId, db, d.category, true);
+  if (cat.error) return { ok: false, error: cat.error };
 
   const [recurring] = await db.insert(recurringTasks).values({
     userId,
     title: d.title,
-    category: d.category,
+    category: cat.slug!,
     priority: d.priority,
     durationMinutes: d.duration_minutes,
     scheduledTime: d.scheduled_time,

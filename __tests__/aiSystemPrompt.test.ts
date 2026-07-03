@@ -14,9 +14,19 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Saturday');
   });
 
-  it('includes category list', () => {
+  it("includes the user's own topics", () => {
+    const prompt = buildSystemPrompt(new Date(), 'UTC', [
+      { slug: 'learning', label: 'Learning' },
+      { slug: 'home-garden', label: 'Home Garden' },
+    ]);
+    expect(prompt).toContain('learning ("Learning")');
+    expect(prompt).toContain('home-garden ("Home Garden")');
+    expect(prompt).toContain('default to the user\'s first topic ("learning")');
+  });
+
+  it('handles a user with no topics', () => {
     const prompt = buildSystemPrompt(new Date());
-    expect(prompt).toContain('career, lms, freelance, learning, uber, faith');
+    expect(prompt).toContain('no topics yet');
   });
 
   it('includes priority definitions', () => {

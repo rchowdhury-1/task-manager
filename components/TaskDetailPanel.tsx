@@ -8,21 +8,13 @@ import {
 } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useActiveTask } from '@/lib/state/activeTask';
-import { useTask, useUpdateTask, useDeleteTask } from '@/lib/api/hooks';
+import { useTask, useUpdateTask, useDeleteTask, useCategoryMap } from '@/lib/api/hooks';
 import { useSaveIndicator, type SaveState } from '@/lib/hooks/useSaveIndicator';
+import { colourStyle } from '@/lib/categories';
 import { toast } from 'sonner';
-import type { Task, Category, Priority, Status } from '@/lib/types';
+import type { Task, Priority, Status } from '@/lib/types';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-
-const CATEGORY_STYLES: Record<Category, { bg: string; text: string; bgDark: string; textDark: string; label: string }> = {
-  career:    { bg: 'bg-[#FFF7ED]', text: 'text-[#C2410C]', bgDark: 'dark:bg-[#431407]', textDark: 'dark:text-[#FB923C]', label: 'Career' },
-  lms:       { bg: 'bg-[#EFF6FF]', text: 'text-[#1D4ED8]', bgDark: 'dark:bg-[#172554]', textDark: 'dark:text-[#60A5FA]', label: 'LMS' },
-  freelance: { bg: 'bg-[#EEF2FF]', text: 'text-[#4338CA]', bgDark: 'dark:bg-[#1E1B4B]', textDark: 'dark:text-[#818CF8]', label: 'Freelance' },
-  learning:  { bg: 'bg-[#F5F3FF]', text: 'text-[#7C3AED]', bgDark: 'dark:bg-[#2E1065]', textDark: 'dark:text-[#A78BFA]', label: 'Learning' },
-  uber:      { bg: 'bg-[#F8FAFC]', text: 'text-[#475569]', bgDark: 'dark:bg-[#1E293B]', textDark: 'dark:text-[#94A3B8]', label: 'Uber' },
-  faith:     { bg: 'bg-[#FFFBEB]', text: 'text-[#92400E]', bgDark: 'dark:bg-[#451A03]', textDark: 'dark:text-[#FBBF24]', label: 'Faith' },
-};
 
 const PRIORITY_PILLS: { value: Priority; label: string; activeBg: string; activeText: string }[] = [
   { value: 1, label: 'P1', activeBg: 'bg-p1', activeText: 'text-white' },
@@ -98,6 +90,7 @@ export function TaskDetailPanel() {
   const { data: task, isLoading } = useTask(activeTaskId ?? undefined);
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const categoryMap = useCategoryMap();
   const { state: saveState, markSaving, markSaved, markIdle } = useSaveIndicator();
 
   // Slide-in animation
@@ -299,7 +292,8 @@ export function TaskDetailPanel() {
 
   if (!mounted) return null;
 
-  const catStyle = task ? CATEGORY_STYLES[task.category] : null;
+  const category = task ? categoryMap[task.category] : undefined;
+  const catStyle = task ? { ...colourStyle(category?.colour), label: category?.label ?? task.category } : null;
 
   // Time tracking values
   const estimated = task?.durationMinutes ?? 0;

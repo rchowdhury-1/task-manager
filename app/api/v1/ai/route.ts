@@ -6,7 +6,8 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
 import { withAuth } from '@/lib/auth/handler';
 import { db } from '@/lib/db';
 import { aiCalls, users } from '@/lib/db/schema';
-import { TOOLS } from '@/lib/ai/tools';
+import { buildTools } from '@/lib/ai/tools';
+import { getUserCategories } from '@/lib/categories-server';
 import { EXECUTORS } from '@/lib/ai/executors';
 import { buildSystemPrompt } from '@/lib/ai/systemPrompt';
 import { buildUserContext } from '@/lib/ai/context';
@@ -58,8 +59,10 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     const now = new Date();
     const [userRow] = await db.select({ timezone: users.timezone }).from(users).where(eq(users.id, userId)).limit(1);
     const userTz = userRow?.timezone ?? 'UTC';
-    const systemPrompt = buildSystemPrompt(now, userTz);
+    const userCategories = await getUserCategories(db, userId);
+    const systemPrompt = buildSystemPrompt(now, userTz, userCategories);
     const userContext = await buildUserContext(userId, db);
+    const tools = buildTools(userCategories.map((c) => c.slug));
 
     const messages: ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
@@ -76,7 +79,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
-        tools: TOOLS,
+        tools,
         tool_choice: 'auto',
       });
 

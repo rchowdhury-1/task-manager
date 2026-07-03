@@ -5,6 +5,7 @@ import { users, categories } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/auth/password";
 import { signToken } from "@/lib/auth/jwt";
 import { registerSchema } from "@/lib/validation/auth";
+import { STARTER_CATEGORIES } from "@/lib/categories";
 import { checkRegisterRateLimit } from "@/lib/auth/registerRateLimiter";
 
 export async function POST(req: NextRequest) {
@@ -79,17 +80,9 @@ export async function POST(req: NextRequest) {
         createdAt: users.createdAt,
       });
 
-    // Seed system categories for the new user
-    const systemCategories = [
-      { slug: 'career',    label: 'Career',    colour: 'blue',   icon: 'briefcase', sortOrder: 0 },
-      { slug: 'lms',       label: 'LMS',       colour: 'violet', icon: 'book',      sortOrder: 1 },
-      { slug: 'freelance', label: 'Freelance',  colour: 'amber',  icon: 'code',      sortOrder: 2 },
-      { slug: 'learning',  label: 'Learning',   colour: 'green',  icon: 'layers',    sortOrder: 3 },
-      { slug: 'uber',      label: 'Uber Eats',  colour: 'slate',  icon: 'truck',     sortOrder: 4 },
-      { slug: 'faith',     label: 'Faith',      colour: 'rose',   icon: 'heart',     sortOrder: 5 },
-    ];
+    // Seed starter topics — generic suggestions the user can rename or delete
     await db.insert(categories).values(
-      systemCategories.map((c) => ({ userId: user.id, ...c, isSystem: true }))
+      STARTER_CATEGORIES.map((c) => ({ userId: user.id, ...c, isSystem: false }))
     );
 
     const token = signToken(user.id);
