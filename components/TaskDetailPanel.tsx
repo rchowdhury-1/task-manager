@@ -16,6 +16,8 @@ import type { Task, Priority, Status } from '@/lib/types';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
+const SWIPE_HINT_KEY = 'pos-swipe-hint-dismissed';
+
 const PRIORITY_PILLS: { value: Priority; label: string; activeBg: string; activeText: string }[] = [
   { value: 1, label: 'P1', activeBg: 'bg-p1', activeText: 'text-white' },
   { value: 2, label: 'P2', activeBg: 'bg-p2', activeText: 'text-white' },
@@ -226,6 +228,102 @@ export function TaskDetailPanel() {
     return () => window.removeEventListener('keydown', handleKey, true);
   }, [activeTaskId, close]);
 
+  // ─── Mobile swipe-to-dismiss (ADR-004) ────────────────────────────────────
+  // Drag starts only from the narrow left-edge zone so it never fights text
+  // selection or scrolling in the panel body. The drag drives the panel's
+  // transform directly and rides the existing CSS transition on release.
+  const swipe = useRef<{
+    pointerId: number;
+    startX: number;
+    lastX: number;
+    lastT: number;
+    velocity: number;
+  } | null>(null);
+
+  const endSwipe = useCallback(
+    (dismiss: boolean) => {
+      swipe.current = null;
+      const panel = panelRef.current;
+      if (!panel) {
+        if (dismiss) close();
+        return;
+      }
+      panel.style.transitionProperty = '';
+      void panel.offsetWidth; // reflow so the restored transition animates the change
+      if (dismiss) {
+        panel.style.transform = 'translateX(100%)';
+        close();
+      } else {
+        panel.style.transform = '';
+      }
+    },
+    [close],
+  );
+
+  const handleSwipeStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    swipe.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      lastX: e.clientX,
+      lastT: e.timeStamp,
+      velocity: 0,
+    };
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {
+      // jsdom / older browsers
+    }
+    if (panelRef.current) panelRef.current.style.transitionProperty = 'none';
+  };
+
+  const handleSwipeMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const s = swipe.current;
+    if (!s || e.pointerId !== s.pointerId) return;
+    const dx = Math.max(0, e.clientX - s.startX);
+    const dt = e.timeStamp - s.lastT;
+    if (dt > 0) s.velocity = (e.clientX - s.lastX) / dt;
+    s.lastX = e.clientX;
+    s.lastT = e.timeStamp;
+    if (panelRef.current) panelRef.current.style.transform = `translateX(${dx}px)`;
+  };
+
+  const handleSwipeEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const s = swipe.current;
+    if (!s || e.pointerId !== s.pointerId) return;
+    const dx = Math.max(0, e.clientX - s.startX);
+    const width = panelRef.current?.offsetWidth || window.innerWidth;
+    // Dismiss past a third of the panel, or on a decisive flick
+    endSwipe(dx > width / 3 || (dx > 60 && s.velocity > 0.5));
+  };
+
+  const handleSwipeCancel = () => {
+    if (swipe.current) endSwipe(false);
+  };
+
+  // One-time hint teaching the gesture; persists via localStorage so it only
+  // ever shows on the first task a user opens on this device.
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+
+  useEffect(() => {
+    if (!mounted) {
+      setShowSwipeHint(false);
+      return;
+    }
+    let t: ReturnType<typeof setTimeout> | undefined;
+    try {
+      if (!localStorage.getItem(SWIPE_HINT_KEY)) {
+        setShowSwipeHint(true);
+        localStorage.setItem(SWIPE_HINT_KEY, '1');
+        t = setTimeout(() => setShowSwipeHint(false), 5000);
+      }
+    } catch {
+      // storage unavailable — skip the hint rather than nag every open
+    }
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [mounted]);
+
   // Debounced patch helper
   const patchField = useCallback(
     (field: string, value: unknown) => {
@@ -385,10 +483,32 @@ export function TaskDetailPanel() {
       }`}>
         <div
           ref={panelRef}
-          className={`h-full w-full bg-surface border-l border-border flex flex-col transition-transform duration-250 ease-out ${
+          className={`relative h-full w-full bg-surface border-l border-border flex flex-col transition-transform duration-250 ease-out ${
             visible ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
+        {/* Mobile swipe-to-dismiss: edge drag zone + grab handle (ADR-004) */}
+        <div
+          data-testid="panel-swipe-zone"
+          aria-hidden="true"
+          className="md:hidden absolute left-0 top-0 h-full w-6 z-20 touch-none"
+          onPointerDown={handleSwipeStart}
+          onPointerMove={handleSwipeMove}
+          onPointerUp={handleSwipeEnd}
+          onPointerCancel={handleSwipeCancel}
+        >
+          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-10 rounded-full bg-border-strong" />
+        </div>
+
+        {/* One-time gesture hint */}
+        {showSwipeHint && (
+          <button
+            onClick={() => setShowSwipeHint(false)}
+            className="md:hidden absolute left-7 top-14 z-20 bg-surface-raised border border-border rounded-full px-3 py-1.5 text-[12px] text-secondary shadow-sm"
+          >
+            Swipe right or tap ✕ to close
+          </button>
+        )}
         {isLoading || !task ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />

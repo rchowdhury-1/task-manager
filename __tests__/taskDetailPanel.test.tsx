@@ -74,8 +74,22 @@ function patchCalls() {
   return apiCalls.filter(c => c.init?.method === 'PATCH');
 }
 
+// jsdom may lack PointerEvent; the swipe handlers only need pointerId/clientX
+if (typeof window.PointerEvent === 'undefined') {
+  class PointerEventPolyfill extends MouseEvent {
+    pointerId: number;
+    constructor(type: string, params: MouseEventInit & { pointerId?: number } = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId ?? 0;
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).PointerEvent = PointerEventPolyfill;
+}
+
 beforeEach(() => {
   apiCalls.length = 0;
+  localStorage.clear();
 });
 
 afterEach(() => {
@@ -142,6 +156,78 @@ describe('TaskDetailPanel exits', () => {
     });
     await waitFor(() => expect(panelIsOpen()).toBe(false));
     expect(backSpy).not.toHaveBeenCalled();
+  });
+});
+
+// ─── Mobile swipe-to-dismiss (ADR-004) ──────────────────────────────────────
+
+function swipeZone() {
+  return screen.getByTestId('panel-swipe-zone');
+}
+
+function doSwipe(distance: number) {
+  // window.innerWidth (1024 in jsdom) is the threshold base since offsetWidth
+  // is 0 in jsdom — dismiss threshold is innerWidth / 3 ≈ 341
+  const zone = swipeZone();
+  fireEvent.pointerDown(zone, { pointerId: 1, clientX: 8 });
+  fireEvent.pointerMove(zone, { pointerId: 1, clientX: 8 + distance });
+  fireEvent.pointerUp(zone, { pointerId: 1, clientX: 8 + distance });
+}
+
+describe('TaskDetailPanel swipe-to-dismiss', () => {
+  it('closes when swiped right past the threshold', async () => {
+    renderPanel();
+    await openPanel();
+    doSwipe(500);
+    await waitFor(() => expect(panelIsOpen()).toBe(false));
+  });
+
+  it('flushes pending edits and consumes the history entry on swipe-close', async () => {
+    const backSpy = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    renderPanel();
+    await openPanel();
+
+    const notes = screen.getByPlaceholderText(/detailed notes/i);
+    fireEvent.change(notes, { target: { value: 'typed then swiped' } });
+
+    doSwipe(500);
+    await waitFor(() => expect(panelIsOpen()).toBe(false));
+
+    expect(backSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      const patches = patchCalls().map(c => JSON.parse(String(c.init?.body)));
+      expect(patches.some(p => p.notes === 'typed then swiped')).toBe(true);
+    });
+  });
+
+  it('snaps back and stays open on a short swipe', async () => {
+    renderPanel();
+    await openPanel();
+    doSwipe(30);
+    // panel remains open and interactive
+    expect(panelIsOpen()).toBe(true);
+    expect(screen.getByDisplayValue('Repro task')).toBeDefined();
+  });
+
+  it('shows the gesture hint on first open only', async () => {
+    renderPanel();
+    await openPanel();
+    expect(screen.getByText(/swipe right or tap/i)).toBeDefined();
+    expect(localStorage.getItem('pos-swipe-hint-dismissed')).toBe('1');
+
+    // Close, wait for unmount (250ms animation), reopen in the SAME session —
+    // the hint state must have been reset, not just the storage flag
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(panelIsOpen()).toBe(false));
+    await new Promise(r => setTimeout(r, 300));
+    await openPanel();
+    expect(screen.queryByText(/swipe right or tap/i)).toBeNull();
+    cleanup();
+
+    // Fresh mount with the flag already set — hint must not reappear
+    renderPanel();
+    await openPanel();
+    expect(screen.queryByText(/swipe right or tap/i)).toBeNull();
   });
 });
 
