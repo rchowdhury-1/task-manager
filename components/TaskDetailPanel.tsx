@@ -506,7 +506,7 @@ export function TaskDetailPanel() {
             onClick={() => setShowSwipeHint(false)}
             className="md:hidden absolute left-7 top-14 z-20 bg-surface-raised border border-border rounded-full px-3 py-1.5 text-[12px] text-secondary shadow-sm"
           >
-            Swipe right or tap ✕ to close
+            Swipe right to close
           </button>
         )}
         {isLoading || !task ? (
@@ -529,10 +529,10 @@ export function TaskDetailPanel() {
                 <SaveIndicator state={saveState} />
               </div>
 
-              {/* Close button */}
+              {/* Close button — desktop only; mobile closes via swipe/back/Done */}
               <button
                 onClick={close}
-                className="p-1 rounded-md text-secondary hover:text-primary hover:bg-surface-raised transition-colors"
+                className="hidden md:block p-1 rounded-md text-secondary hover:text-primary hover:bg-surface-raised transition-colors"
                 aria-label="Close panel"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -212,7 +212,7 @@ describe('TaskDetailPanel swipe-to-dismiss', () => {
   it('shows the gesture hint on first open only', async () => {
     renderPanel();
     await openPanel();
-    expect(screen.getByText(/swipe right or tap/i)).toBeDefined();
+    expect(screen.getByText(/swipe right to close/i)).toBeDefined();
     expect(localStorage.getItem('pos-swipe-hint-dismissed')).toBe('1');
 
     // Close, wait for unmount (250ms animation), reopen in the SAME session —
@@ -221,13 +221,13 @@ describe('TaskDetailPanel swipe-to-dismiss', () => {
     await waitFor(() => expect(panelIsOpen()).toBe(false));
     await new Promise(r => setTimeout(r, 300));
     await openPanel();
-    expect(screen.queryByText(/swipe right or tap/i)).toBeNull();
+    expect(screen.queryByText(/swipe right to close/i)).toBeNull();
     cleanup();
 
     // Fresh mount with the flag already set — hint must not reappear
     renderPanel();
     await openPanel();
-    expect(screen.queryByText(/swipe right or tap/i)).toBeNull();
+    expect(screen.queryByText(/swipe right to close/i)).toBeNull();
   });
 });
 
