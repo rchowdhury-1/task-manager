@@ -1,22 +1,26 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { parseQuickAdd } from '@/lib/parseQuickAdd';
-
-function toISODate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function nextWeekday(target: number): string {
-  const now = new Date();
-  const diff = (target - now.getDay() + 7) % 7 || 7;
-  const d = new Date(now);
-  d.setDate(now.getDate() + diff);
-  return toISODate(d);
-}
 
 // The user's topic slugs, as passed by the UI from the categories table
 const SLUGS = ['learning', 'fitness', 'errands', 'projects'];
 
+// Frozen reference: Wednesday 2026-08-12. parseQuickAdd calls `new Date()`
+// internally (no injectable clock yet — see B13 in the hardening plan),
+// so every date-relative expectation below is a hard-coded literal computed
+// against this exact instant, not re-derived at runtime. That's the fix:
+// the old version of this file called `new Date()` in both the test's
+// expected-value helpers AND transitively in the code under test, so a run
+// straddling midnight (or DST) could see the two clocks disagree.
 describe('parseQuickAdd', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-12T10:00:00'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   // 1. Plain title only
   it('parses plain title', () => {
     const result = parseQuickAdd('Buy milk');
@@ -70,32 +74,30 @@ describe('parseQuickAdd', () => {
     expect(result.priority).toBe(3);
   });
 
-  // 7. Day: today
+  // 7. Day: today (frozen at Wed 2026-08-12)
   it('parses today', () => {
     const result = parseQuickAdd('Do thing today');
-    expect(result.assignedDay).toBe(toISODate(new Date()));
+    expect(result.assignedDay).toBe('2026-08-12');
     expect(result.title).toBe('Do thing');
   });
 
-  // 8. Day: tomorrow
+  // 8. Day: tomorrow (frozen at Wed 2026-08-12)
   it('parses tomorrow', () => {
     const result = parseQuickAdd('Do thing tomorrow');
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    expect(result.assignedDay).toBe(toISODate(tomorrow));
+    expect(result.assignedDay).toBe('2026-08-13');
   });
 
-  // 9. Day: mon
+  // 9. Day: mon (frozen at Wed 2026-08-12 -> next Monday is 2026-08-17)
   it('parses mon as next Monday', () => {
     const result = parseQuickAdd('Do thing mon');
-    expect(result.assignedDay).toBe(nextWeekday(1));
+    expect(result.assignedDay).toBe('2026-08-17');
     expect(result.title).toBe('Do thing');
   });
 
-  // 10. Day: fri
+  // 10. Day: fri (frozen at Wed 2026-08-12 -> next Friday is 2026-08-14)
   it('parses fri as next Friday', () => {
     const result = parseQuickAdd('Do thing fri');
-    expect(result.assignedDay).toBe(nextWeekday(5));
+    expect(result.assignedDay).toBe('2026-08-14');
   });
 
   // 11. Duration: 2h
@@ -146,7 +148,7 @@ describe('parseQuickAdd', () => {
     expect(result.title).toBe('Fix bug');
     expect(result.category).toBe('learning');
     expect(result.priority).toBe(1);
-    expect(result.assignedDay).toBe(toISODate(new Date()));
+    expect(result.assignedDay).toBe('2026-08-12');
     expect(result.durationMinutes).toBe(120);
     expect(result.scheduledTime).toBe('09:00');
   });
@@ -162,5 +164,28 @@ describe('parseQuickAdd', () => {
   it('trims extra spaces', () => {
     const result = parseQuickAdd('  extra  spaces  ');
     expect(result.title).toBe('extra spaces');
+  });
+});
+
+// Boundary cases the old real-clock version could never reliably exercise —
+// "tomorrow" crossing a month/year rollover is exactly where naive date
+// arithmetic (e.g. string month/day concatenation) breaks.
+describe('parseQuickAdd — date boundaries', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('rolls "tomorrow" over a month boundary (Aug 31 -> Sep 1)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-31T10:00:00'));
+    const result = parseQuickAdd('Do thing tomorrow');
+    expect(result.assignedDay).toBe('2026-09-01');
+  });
+
+  it('rolls "tomorrow" over a year boundary (Dec 31 -> Jan 1)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-12-31T10:00:00'));
+    const result = parseQuickAdd('Do thing tomorrow');
+    expect(result.assignedDay).toBe('2027-01-01');
   });
 });
