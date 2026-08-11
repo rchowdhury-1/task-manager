@@ -22,8 +22,11 @@ describe('quoteFor', () => {
       const date = new Date(2026, 0, 1 + day);
       seen.add(quoteFor(date, 'morning').text);
     }
-    // All 12 quotes should appear at least once over a year
-    expect(seen.size).toBe(HABIT_QUOTES.length);
+    // Every quote should appear at least once over a year. Reporting
+    // which ones are missing (rather than just a size mismatch) names
+    // the actual failing case if the cycle ever skips one.
+    const missing = HABIT_QUOTES.filter((q) => !seen.has(q.text));
+    expect(missing).toEqual([]);
   });
 
   it('is deterministic — same input produces same output', () => {

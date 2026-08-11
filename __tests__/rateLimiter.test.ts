@@ -1,28 +1,32 @@
-import { describe, it, expect } from 'vitest';
-import { checkRegisterRateLimit } from '@/lib/auth/registerRateLimiter';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { checkRegisterRateLimit, resetRegisterRateLimiter } from '@/lib/auth/registerRateLimiter';
 
 describe('checkRegisterRateLimit', () => {
+  beforeEach(() => {
+    resetRegisterRateLimiter();
+  });
+
   it('allows first registration attempt', () => {
     const result = checkRegisterRateLimit('192.168.1.100');
     expect(result.allowed).toBe(true);
   });
 
-  it('allows up to 5 attempts within an hour', () => {
+  it('allows exactly 5 attempts then blocks the 6th, from the same IP', () => {
     const ip = '10.0.0.1';
-    for (let i = 0; i < 5; i++) {
-      const result = checkRegisterRateLimit(ip);
-      expect(result.allowed).toBe(true);
-    }
-  });
+    const results = Array.from({ length: 6 }, (_, i) => ({
+      attempt: i + 1,
+      ...checkRegisterRateLimit(ip),
+    }));
 
-  it('blocks after 5 attempts from same IP', () => {
-    const ip = '10.0.0.2';
-    for (let i = 0; i < 5; i++) {
-      checkRegisterRateLimit(ip);
-    }
-    const result = checkRegisterRateLimit(ip);
-    expect(result.allowed).toBe(false);
-    expect(result.retryAfter).toBeGreaterThan(0);
+    expect(results).toEqual([
+      { attempt: 1, allowed: true },
+      { attempt: 2, allowed: true },
+      { attempt: 3, allowed: true },
+      { attempt: 4, allowed: true },
+      { attempt: 5, allowed: true },
+      { attempt: 6, allowed: false, retryAfter: expect.any(Number) },
+    ]);
+    expect(results[5].retryAfter).toBeGreaterThan(0);
   });
 
   it('allows different IPs independently', () => {
@@ -34,12 +38,16 @@ describe('checkRegisterRateLimit', () => {
     const result = checkRegisterRateLimit(ip2);
     expect(result.allowed).toBe(true);
   });
-});
 
-describe('trial calculation', () => {
-  it('computes 90 days from now', () => {
-    const trialEndsAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
-    const daysLeft = Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    expect(daysLeft).toBe(90);
+  it('resetRegisterRateLimiter clears tracked attempts', () => {
+    const ip = '10.0.0.5';
+    for (let i = 0; i < 5; i++) {
+      checkRegisterRateLimit(ip);
+    }
+    expect(checkRegisterRateLimit(ip).allowed).toBe(false);
+
+    resetRegisterRateLimiter();
+
+    expect(checkRegisterRateLimit(ip).allowed).toBe(true);
   });
 });

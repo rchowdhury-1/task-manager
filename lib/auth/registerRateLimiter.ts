@@ -28,3 +28,8 @@ export function checkRegisterRateLimit(ip: string): {
   entry.count += 1;
   return { allowed: true };
 }
+
+/** Test-only: clear all tracked attempts so tests don't leak state across cases. */
+export function resetRegisterRateLimiter(): void {
+  attempts.clear();
+}

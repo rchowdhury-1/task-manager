@@ -7,6 +7,7 @@ import { signToken } from "@/lib/auth/jwt";
 import { registerSchema } from "@/lib/validation/auth";
 import { STARTER_CATEGORIES } from "@/lib/categories";
 import { checkRegisterRateLimit } from "@/lib/auth/registerRateLimiter";
+import { trialEndDate } from "@/lib/auth/trial";
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    const trialEndsAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+    const trialEndsAt = trialEndDate();
 
     const [user] = await db
       .insert(users)

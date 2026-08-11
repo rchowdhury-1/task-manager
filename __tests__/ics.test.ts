@@ -48,10 +48,18 @@ describe('foldLine', () => {
     const parts = folded.split('\r\n');
     expect(parts.length).toBeGreaterThan(1);
     expect(parts[0].length).toBe(75);
-    for (let i = 1; i < parts.length; i++) {
-      expect(parts[i][0]).toBe(' ');
-      expect(parts[i].length).toBeLessThanOrEqual(75);
-    }
+
+    // Every continuation line must be space-prefixed (RFC 5545 folding)
+    // and within the 75-octet limit. Map to a diagnosable shape instead
+    // of asserting inside a loop, so a failure names the offending line.
+    const badContinuations = parts.slice(1).map((text, i) => ({
+      line: i + 1,
+      text,
+      startsWithSpace: text[0] === ' ',
+      within75: text.length <= 75,
+    })).filter((p) => !p.startsWithSpace || !p.within75);
+
+    expect(badContinuations).toEqual([]);
   });
 });
 
