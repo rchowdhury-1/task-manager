@@ -5,9 +5,7 @@ import { habits, habitCompletions } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
 import { completeHabitSchema } from "@/lib/validation/habits";
 import { isValidUUID } from "@/lib/utils/validate";
-
-const BAD_ID = Response.json({ error: "Invalid habit id" }, { status: 400 });
-const NOT_FOUND = Response.json({ error: "Not found" }, { status: 404 });
+import { notFound, badRequest } from "@/lib/api/responses";
 
 async function ownsHabit(userId: string, habitId: string): Promise<boolean> {
   const [row] = await db
@@ -21,7 +19,7 @@ async function ownsHabit(userId: string, habitId: string): Promise<boolean> {
 // POST — mark a habit complete on a given date (idempotent)
 export const POST = withAuth(async (req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid habit id");
 
   const body = await req.json();
   const parsed = completeHabitSchema.safeParse(body);
@@ -29,7 +27,7 @@ export const POST = withAuth(async (req: NextRequest, { userId, params }) => {
     return Response.json({ error: parsed.error.errors[0].message }, { status: 400 });
   }
 
-  if (!(await ownsHabit(userId, id))) return NOT_FOUND;
+  if (!(await ownsHabit(userId, id))) return notFound();
 
   await db
     .insert(habitCompletions)
@@ -42,7 +40,7 @@ export const POST = withAuth(async (req: NextRequest, { userId, params }) => {
 // DELETE — remove a habit completion for a given date
 export const DELETE = withAuth(async (req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid habit id");
 
   const body = await req.json();
   const parsed = completeHabitSchema.safeParse(body);
@@ -50,7 +48,7 @@ export const DELETE = withAuth(async (req: NextRequest, { userId, params }) => {
     return Response.json({ error: parsed.error.errors[0].message }, { status: 400 });
   }
 
-  if (!(await ownsHabit(userId, id))) return NOT_FOUND;
+  if (!(await ownsHabit(userId, id))) return notFound();
 
   await db
     .delete(habitCompletions)

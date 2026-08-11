@@ -5,13 +5,11 @@ import { habits } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/handler";
 import { updateHabitSchema } from "@/lib/validation/habits";
 import { isValidUUID } from "@/lib/utils/validate";
-
-const NOT_FOUND = Response.json({ error: "Not found" }, { status: 404 });
-const BAD_ID = Response.json({ error: "Invalid habit id" }, { status: 400 });
+import { notFound, badRequest } from "@/lib/api/responses";
 
 export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid habit id");
 
   const body = await req.json();
   const parsed = updateHabitSchema.safeParse(body);
@@ -39,18 +37,18 @@ export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
     .where(and(eq(habits.id, id), eq(habits.userId, userId)))
     .returning();
 
-  return updated ? Response.json(updated) : NOT_FOUND;
+  return updated ? Response.json(updated) : notFound();
 });
 
 export const DELETE = withAuth(async (_req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid habit id");
 
   const deleted = await db
     .delete(habits)
     .where(and(eq(habits.id, id), eq(habits.userId, userId)))
     .returning({ id: habits.id });
 
-  if (deleted.length === 0) return NOT_FOUND;
+  if (deleted.length === 0) return notFound();
   return new Response(null, { status: 204 });
 });

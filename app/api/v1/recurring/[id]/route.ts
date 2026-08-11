@@ -6,13 +6,11 @@ import { withAuth } from "@/lib/auth/handler";
 import { updateRecurringSchema } from "@/lib/validation/recurring";
 import { userHasCategory } from "@/lib/categories-server";
 import { isValidUUID } from "@/lib/utils/validate";
-
-const NOT_FOUND = Response.json({ error: "Not found" }, { status: 404 });
-const BAD_ID = Response.json({ error: "Invalid recurring task id" }, { status: 400 });
+import { notFound, badRequest } from "@/lib/api/responses";
 
 export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid recurring task id");
 
   const body = await req.json();
   const parsed = updateRecurringSchema.safeParse(body);
@@ -45,18 +43,18 @@ export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
     .where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, userId)))
     .returning();
 
-  return updated ? Response.json(updated) : NOT_FOUND;
+  return updated ? Response.json(updated) : notFound();
 });
 
 export const DELETE = withAuth(async (_req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid recurring task id");
 
   const deleted = await db
     .delete(recurringTasks)
     .where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, userId)))
     .returning({ id: recurringTasks.id });
 
-  if (deleted.length === 0) return NOT_FOUND;
+  if (deleted.length === 0) return notFound();
   return new Response(null, { status: 204 });
 });

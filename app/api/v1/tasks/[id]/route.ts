@@ -6,13 +6,11 @@ import { withAuth } from "@/lib/auth/handler";
 import { updateTaskSchema } from "@/lib/validation/tasks";
 import { userHasCategory } from "@/lib/categories-server";
 import { isValidUUID } from "@/lib/utils/validate";
-
-const NOT_FOUND = Response.json({ error: "Not found" }, { status: 404 });
-const BAD_ID = Response.json({ error: "Invalid task id" }, { status: 400 });
+import { notFound, badRequest } from "@/lib/api/responses";
 
 export const GET = withAuth(async (_req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid task id");
 
   const [task] = await db
     .select()
@@ -20,12 +18,12 @@ export const GET = withAuth(async (_req: NextRequest, { userId, params }) => {
     .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
     .limit(1);
 
-  return task ? Response.json(task) : NOT_FOUND;
+  return task ? Response.json(task) : notFound();
 });
 
 export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid task id");
 
   const body = await req.json();
   const parsed = updateTaskSchema.safeParse(body);
@@ -59,18 +57,18 @@ export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
     .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
     .returning();
 
-  return updated ? Response.json(updated) : NOT_FOUND;
+  return updated ? Response.json(updated) : notFound();
 });
 
 export const DELETE = withAuth(async (_req: NextRequest, { userId, params }) => {
   const id = params?.id;
-  if (!isValidUUID(id)) return BAD_ID;
+  if (!isValidUUID(id)) return badRequest("Invalid task id");
 
   const deleted = await db
     .delete(tasks)
     .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
     .returning({ id: tasks.id });
 
-  if (deleted.length === 0) return NOT_FOUND;
+  if (deleted.length === 0) return notFound();
   return new Response(null, { status: 204 });
 });
