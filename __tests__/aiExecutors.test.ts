@@ -1,5 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { EXECUTORS } from '@/lib/ai/executors';
+
+// Renders a captured Drizzle where-predicate to real SQL + bound params, so
+// tests can assert on what a query would ACTUALLY filter by — not just that
+// the executor returned ok:true, which proves nothing about tenancy.
+const dialect = new PgDialect();
+function renderWhere(whereMock: ReturnType<typeof vi.fn>, callIndex = 0) {
+  const predicate = whereMock.mock.calls[callIndex]?.[0];
+  if (!predicate) throw new Error(`where() was not called (call index ${callIndex})`);
+  return dialect.sqlToQuery(predicate);
+}
 
 // ─── Mock DB helpers ────────────────────────────────────────────────────────
 
@@ -241,17 +252,145 @@ describe('delete_recurring', () => {
   });
 });
 
-// ─── Security: user_id from args is ignored ─────────────────────────────────
+// ─── Security: tenancy is enforced by the actual query predicate ───────────
+//
+// The old version of this suite only proved that Zod strips an unknown
+// `user_id` key from args — it never inspected what the resulting query
+// would actually filter by, so a regression that dropped the
+// eq(table.userId, userId) predicate entirely would have sailed through
+// green. These tests render the captured where-clause to real SQL + bound
+// params via drizzle's PgDialect and assert the caller's userId is the one
+// actually bound — and that a spoofed attacker id never reaches the query.
 
-describe('security boundary', () => {
-  it('create_task uses parameter userId, not args.user_id', async () => {
+const ATTACKER_ID = 'attacker-id';
+
+describe('security boundary — row-targeting executors scope by the caller\'s userId', () => {
+  it('update_task filters by (id, callerUserId), ignoring any user_id in args', async () => {
+    const db = mockDb([{ id: '550e8400-e29b-41d4-a716-446655440000', title: 'Updated' }]);
+    await EXECUTORS.update_task(USER_ID, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      title: 'Updated',
+      user_id: ATTACKER_ID,
+    }, db);
+
+    const { sql, params } = renderWhere(db._mocks.whereForUpdate);
+    expect(sql).toMatch(/user_id/);
+    expect(params).toContain(USER_ID);
+    expect(params).not.toContain(ATTACKER_ID);
+  });
+
+  it('delete_task filters by (id, callerUserId)', async () => {
+    const db = mockDb([{ id: '550e8400-e29b-41d4-a716-446655440000', title: 'Gone' }]);
+    await EXECUTORS.delete_task(USER_ID, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      user_id: ATTACKER_ID,
+    }, db);
+
+    const { sql, params } = renderWhere(db._mocks.whereForDelete);
+    expect(sql).toMatch(/user_id/);
+    expect(params).toContain(USER_ID);
+    expect(params).not.toContain(ATTACKER_ID);
+  });
+
+  it('complete_task filters by (id, callerUserId)', async () => {
+    const db = mockDb([{ id: '550e8400-e29b-41d4-a716-446655440000', title: 'Done' }]);
+    await EXECUTORS.complete_task(USER_ID, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      user_id: ATTACKER_ID,
+    }, db);
+
+    const { sql, params } = renderWhere(db._mocks.whereForUpdate);
+    expect(sql).toMatch(/user_id/);
+    expect(params).toContain(USER_ID);
+    expect(params).not.toContain(ATTACKER_ID);
+  });
+
+  it('log_time filters by (id, callerUserId)', async () => {
+    const db = mockDb([{ id: '550e8400-e29b-41d4-a716-446655440000', title: 'Task', timeLoggedMinutes: 30 }]);
+    await EXECUTORS.log_time(USER_ID, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      minutes: 30,
+      user_id: ATTACKER_ID,
+    }, db);
+
+    const { sql, params } = renderWhere(db._mocks.whereForUpdate);
+    expect(sql).toMatch(/user_id/);
+    expect(params).toContain(USER_ID);
+    expect(params).not.toContain(ATTACKER_ID);
+  });
+
+  it('delete_recurring filters by (id, callerUserId)', async () => {
+    const db = mockDb([{ id: '550e8400-e29b-41d4-a716-446655440000', title: 'Uber Eats' }]);
+    await EXECUTORS.delete_recurring(USER_ID, {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      user_id: ATTACKER_ID,
+    }, db);
+
+    const { sql, params } = renderWhere(db._mocks.whereForDelete);
+    expect(sql).toMatch(/user_id/);
+    expect(params).toContain(USER_ID);
+    expect(params).not.toContain(ATTACKER_ID);
+  });
+
+  it('complete_habit\'s ownership check filters by (id, callerUserId)', async () => {
+    const db = mockDb([{ id: 'hab-1', name: 'Fajr' }]);
+    // Explicit date skips the users-timezone lookup, so whereForSelect's
+    // first (only) call is the habit-ownership check we're asserting on.
+    await EXECUTORS.complete_habit(USER_ID, {
+      habit_id: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2026-08-11',
+      user_id: ATTACKER_ID,
+    }, db);
+
+    const { sql, params } = renderWhere(db._mocks.whereForSelect);
+    expect(sql).toMatch(/user_id/);
+    expect(params).toContain(USER_ID);
+    expect(params).not.toContain(ATTACKER_ID);
+  });
+});
+
+describe('security boundary — insert executors tag rows with the caller\'s userId', () => {
+  it('create_task inserts with the caller\'s userId, not args.user_id', async () => {
     const db = mockDb();
-    // Even if args contain a user_id, the executor uses the parameter
     const result = await EXECUTORS.create_task(USER_ID, {
       title: 'Test',
-      user_id: 'attacker-id',
+      user_id: ATTACKER_ID,
     }, db);
-    // The executor should succeed (user_id in args is ignored via schema)
     expect(result.ok).toBe(true);
+    expect(db._mocks.values).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_ID }));
+    expect(db._mocks.values).not.toHaveBeenCalledWith(expect.objectContaining({ userId: ATTACKER_ID }));
+  });
+
+  it('create_habit inserts with the caller\'s userId, not args.user_id', async () => {
+    const db = mockDb([{ id: 'hab-1', name: 'Fajr' }]);
+    await EXECUTORS.create_habit(USER_ID, {
+      name: 'Fajr',
+      user_id: ATTACKER_ID,
+    }, db);
+    expect(db._mocks.values).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_ID }));
+    expect(db._mocks.values).not.toHaveBeenCalledWith(expect.objectContaining({ userId: ATTACKER_ID }));
+  });
+
+  it('set_day_rule inserts with the caller\'s userId, not args.user_id', async () => {
+    const db = mockDb([{ dayOfWeek: 1, focusArea: 'job_hunt', maxFocusHours: 8 }]);
+    await EXECUTORS.set_day_rule(USER_ID, {
+      day_of_week: 1,
+      focus_area: 'job_hunt',
+      user_id: ATTACKER_ID,
+    }, db);
+    expect(db._mocks.values).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_ID }));
+    expect(db._mocks.values).not.toHaveBeenCalledWith(expect.objectContaining({ userId: ATTACKER_ID }));
+  });
+
+  it('create_recurring_task inserts with the caller\'s userId, not args.user_id', async () => {
+    const db = mockDb([{ id: 'rec-1', title: 'Daily standup' }]);
+    await EXECUTORS.create_recurring_task(USER_ID, {
+      title: 'Daily standup',
+      days_of_week: [1, 2, 3],
+      category: 'learning',
+      user_id: ATTACKER_ID,
+    }, db);
+    expect(db._mocks.values).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_ID }));
+    expect(db._mocks.values).not.toHaveBeenCalledWith(expect.objectContaining({ userId: ATTACKER_ID }));
   });
 });
