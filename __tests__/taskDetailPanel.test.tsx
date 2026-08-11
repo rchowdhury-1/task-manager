@@ -4,29 +4,20 @@ import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-libra
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TaskDetailPanel } from '@/components/TaskDetailPanel';
 import { ActiveTaskProvider, useActiveTask } from '@/lib/state/activeTask';
+import { makeTask } from './helpers/fixtures';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
 const TASK_ID = '550e8400-e29b-41d4-a716-446655440000';
 
-const TASK = {
+const TASK = makeTask({
   id: TASK_ID,
   userId: 'user-1',
   title: 'Repro task',
-  description: null,
   category: 'learning',
-  status: 'backlog',
-  priority: 2,
-  assignedDay: null,
-  scheduledTime: null,
-  durationMinutes: 60,
-  timeLoggedMinutes: 0,
-  lastLeftOff: null,
-  nextSteps: [],
-  notes: null,
   createdAt: '2026-07-01T10:00:00Z',
   updatedAt: '2026-07-01T10:00:00Z',
-};
+});
 
 const apiCalls: { path: string; init?: RequestInit }[] = [];
 

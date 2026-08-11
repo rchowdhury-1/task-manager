@@ -1,29 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/api/keys';
 import type { Task } from '@/lib/types';
+import { makeTask } from './helpers/fixtures';
 
 // We test the optimistic update logic directly by simulating
 // what the onMutate callbacks do to the query cache.
 
-const MOCK_TASK: Task = {
-  id: 'task-1',
-  userId: 'user-1',
-  title: 'Existing task',
-  description: null,
-  category: 'career',
-  status: 'backlog',
-  priority: 2,
-  assignedDay: null,
-  scheduledTime: null,
-  durationMinutes: 60,
-  timeLoggedMinutes: 0,
-  lastLeftOff: null,
-  nextSteps: [],
-  notes: null,
-  createdAt: '2025-01-01T00:00:00Z',
-  updatedAt: '2025-01-01T00:00:00Z',
-};
+const MOCK_TASK: Task = makeTask({ id: 'task-1', userId: 'user-1', title: 'Existing task' });
 
 describe('optimistic updates', () => {
   let qc: QueryClient;
@@ -39,24 +23,7 @@ describe('optimistic updates', () => {
   it('useCreateTask onMutate adds a temp task to the cache', () => {
     const existing = qc.getQueryData<Task[]>(queryKeys.tasks())!;
 
-    const tempTask: Task = {
-      id: `temp-${Date.now()}`,
-      userId: '',
-      title: 'New task',
-      description: null,
-      category: 'career',
-      status: 'backlog',
-      priority: 2,
-      assignedDay: null,
-      scheduledTime: null,
-      durationMinutes: 60,
-      timeLoggedMinutes: 0,
-      lastLeftOff: null,
-      nextSteps: [],
-      notes: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    const tempTask: Task = makeTask({ id: `temp-${Date.now()}`, userId: '', title: 'New task' });
 
     // Simulate onMutate
     qc.setQueryData<Task[]>(queryKeys.tasks(), (old) => [

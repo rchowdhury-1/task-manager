@@ -1,29 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SMART_LISTS } from '@/lib/lists/smartLists';
 import { isWithinNextDays, daysSince } from '@/lib/utils/dates';
-import type { Task } from '@/lib/types';
-
-function makeTask(overrides: Partial<Task> = {}): Task {
-  return {
-    id: 'test-1',
-    userId: 'u1',
-    title: 'Test task',
-    description: null,
-    category: 'career',
-    status: 'backlog',
-    priority: 2,
-    assignedDay: null,
-    scheduledTime: null,
-    durationMinutes: 60,
-    timeLoggedMinutes: 0,
-    lastLeftOff: null,
-    nextSteps: [],
-    notes: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    ...overrides,
-  };
-}
+import { makeTask } from './helpers/fixtures';
 
 describe('SMART_LISTS filters', () => {
   describe('all_open', () => {
