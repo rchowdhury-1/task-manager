@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Plus, List, Zap, Calendar, Clock, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
+import { Plus, List, Zap, Calendar, Clock, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useCategories, useCreateCategory, useDeleteCategory } from '@/lib/api/hooks';
 import { SMART_LISTS, type SmartListKey } from '@/lib/lists/smartLists';
 import { CATEGORY_ICON_EMOJI, DEFAULT_CATEGORY_ICON } from '@/lib/categories';

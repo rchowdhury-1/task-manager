@@ -1,0 +1,17 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "overrides": [
+    {
+      "files": ["app/api/**/route.ts", "lib/**/*.ts", "lib/**/*.tsx"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "Program > VariableDeclaration > VariableDeclarator > CallExpression[callee.object.name=/^(Response|NextResponse)$/]",
+            "message": "Never construct a Response/NextResponse at module scope and assign it to a const — the body is a one-shot ReadableStream, so reusing it across requests can send an empty or errored body to later callers. Build a fresh Response per request (e.g. via a factory from lib/api/responses)."
+          }
+        ]
+      }
+    }
+  ]
+}

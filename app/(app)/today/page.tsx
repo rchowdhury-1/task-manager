@@ -25,7 +25,6 @@ import {
   greeting,
   longDate,
   formatTimeShort,
-  addTime,
   weekDays,
 } from '@/lib/utils/dates';
 import type { Section } from '@/lib/types';

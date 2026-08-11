@@ -1,14 +1,20 @@
 'use client';
 import { useEffect, useState } from 'react';
 
+// Non-standard browser API not in the DOM lib types.
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export function PWAInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       const shown = localStorage.getItem('pwa-prompt-shown');
       if (!shown) {
         setTimeout(() => setShowPrompt(true), 30000);

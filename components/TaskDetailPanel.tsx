@@ -6,13 +6,12 @@ import {
   useCallback,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { useDebouncedCallback } from 'use-debounce';
 import { useActiveTask } from '@/lib/state/activeTask';
 import { useTask, useUpdateTask, useDeleteTask, useCategoryMap } from '@/lib/api/hooks';
 import { useSaveIndicator, type SaveState } from '@/lib/hooks/useSaveIndicator';
 import { colourStyle } from '@/lib/categories';
 import { toast } from 'sonner';
-import type { Task, Priority, Status } from '@/lib/types';
+import type { Priority, Status } from '@/lib/types';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 

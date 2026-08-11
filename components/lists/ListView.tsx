@@ -7,7 +7,7 @@ import { useActiveTask } from '@/lib/state/activeTask';
 import { useCategories, useCreateTask, useUpdateTask } from '@/lib/api/hooks';
 import { SMART_LISTS, type SmartListKey } from '@/lib/lists/smartLists';
 import { fadeInUp, staggerChildren } from '@/lib/animations';
-import type { Task, Category, CategoryRecord } from '@/lib/types';
+import type { Task, Category } from '@/lib/types';
 
 type FilterMode = 'open' | 'done' | 'all';
 type SortMode = 'date' | 'priority' | 'created';

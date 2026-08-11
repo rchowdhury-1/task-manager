@@ -74,7 +74,6 @@ export function ActivityHeatmap({ data }: { data: HeatmapDay[] }) {
 
   const labelWidth = 28;
   const gridWidth = weeks.length * (CELL_SIZE + GAP);
-  const gridHeight = 7 * (CELL_SIZE + GAP);
 
   return (
     <div className="space-y-2">

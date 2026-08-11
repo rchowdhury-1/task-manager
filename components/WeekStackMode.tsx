@@ -21,7 +21,7 @@ export function WeekStackMode({
 }: WeekStackModeProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 overflow-x-auto">
-      {days.map((day, i) => {
+      {days.map((day) => {
         const tasks = tasksByDay[day] ?? [];
         const recurring = recurringByDay[day] ?? [];
         const dow = new Date(`${day}T12:00:00`).getDay();

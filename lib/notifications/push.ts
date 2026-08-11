@@ -34,6 +34,7 @@ export async function subscribeToPush() {
   } catch (err) {
     // If push service rejects (e.g. VAPID key changed), unregister
     // the service worker entirely and re-register with a clean slate
+    console.warn('[push] subscribe failed, resetting service worker', err);
     await registration.unregister();
     registration = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;

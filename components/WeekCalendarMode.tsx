@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { WeekDayHeader } from './WeekDayHeader';
 import { TaskBlock } from './TaskBlock';
-import { isToday, formatTimeShort, addTime } from '@/lib/utils/dates';
+import { isToday } from '@/lib/utils/dates';
 import type { Task, RecurringTask, DayRule, DayFocus } from '@/lib/types';
 
 const START_HOUR = 6;
