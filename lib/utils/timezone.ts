@@ -28,21 +28,21 @@ export function localToUTC(
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false,
-    // hour12:false alone is ambiguous across ICU builds — some format
-    // midnight as "24" instead of "00". hourCycle pins it unambiguously.
+    // Specify ONLY hourCycle, not hour12 — passing both is a documented
+    // ECMA-402 ambiguity that some ICU builds resolve by formatting
+    // midnight as "24" instead of "00" (confirmed on GitHub Actions'
+    // runner; did not reproduce locally, which is exactly the danger).
     hourCycle: 'h23',
   });
   const parts = formatter.formatToParts(naiveUtc);
-  const get = (type: string) =>
-    Number(parts.find((p) => p.type === type)?.value || 0);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value || 0);
 
   // The difference between intended local and observed local is the offset
   const observedUtc = Date.UTC(
     get('year'),
     get('month') - 1,
     get('day'),
-    get('hour'),
+    get('hour') % 24, // defensive: some ICU builds format midnight as "24"
     get('minute'),
     get('second'),
   );
@@ -66,9 +66,10 @@ export function utcToLocalParts(
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
-    // hour12:false alone is ambiguous across ICU builds — some format
-    // midnight as "24" instead of "00". hourCycle pins it unambiguously.
+    // Specify ONLY hourCycle, not hour12 — passing both is a documented
+    // ECMA-402 ambiguity that some ICU builds resolve by formatting
+    // midnight as "24" instead of "00" (confirmed on GitHub Actions'
+    // runner; did not reproduce locally, which is exactly the danger).
     hourCycle: 'h23',
   });
   const parts = formatter.formatToParts(utcDate);
@@ -78,7 +79,10 @@ export function utcToLocalParts(
     year: get('year'),
     month: get('month'),
     day: get('day'),
-    hour: get('hour'),
+    // Defensive normalization: don't trust any single ICU build not to
+    // hand back "24" for midnight — % 24 makes the 0-23 contract hold
+    // regardless of runtime.
+    hour: get('hour') % 24,
     minute: get('minute'),
   };
 }
