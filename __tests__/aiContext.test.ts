@@ -14,39 +14,39 @@ vi.mock('@/lib/utils/timezone', () => ({
 }));
 
 import { buildUserContext } from '@/lib/ai/context';
+import { users, tasks, habits, dayRules, recurringTasks } from '@/lib/db/schema';
+
+/**
+ * A single permissive query-builder chain, thenable at every step so it
+ * resolves correctly regardless of which methods buildUserContext chains
+ * before awaiting (from().where() for habits/dayRules/recurring,
+ * from().where().orderBy().limit() for tasks, from().where().limit() for
+ * users). No call-order counter — which table's rows come back is decided
+ * by object identity via `dataFor`, not by "which select() call is this".
+ */
+function makeChain<T>(rows: T[]) {
+  const chain = {
+    where: () => chain,
+    orderBy: () => chain,
+    limit: () => Promise.resolve(rows),
+    then: (resolve: (v: T[]) => unknown, reject?: (e: unknown) => unknown) =>
+      Promise.resolve(rows).then(resolve, reject),
+  };
+  return chain;
+}
 
 function mockDb(data: { tasks?: unknown[]; habits?: unknown[]; dayRules?: unknown[]; recurring?: unknown[] } = {}) {
-  const taskData = data.tasks ?? [];
-  const habitData = data.habits ?? [];
-  const dayRuleData = data.dayRules ?? [];
-  const recurringData = data.recurring ?? [];
+  const dataFor = new Map<object, unknown[]>([
+    [users, [{ timezone: 'Europe/London' }]],
+    [tasks, data.tasks ?? []],
+    [habits, data.habits ?? []],
+    [dayRules, data.dayRules ?? []],
+    [recurringTasks, data.recurring ?? []],
+  ]);
 
-  let callCount = 0;
-
-  const select = vi.fn().mockImplementation(() => {
-    const currentCall = callCount++;
-    // Call 0 = users query, Call 1 = tasks, Call 2 = habits, Call 3 = dayRules, Call 4 = recurring
-    const allData = [
-      [{ timezone: 'Europe/London' }],  // users
-      taskData,
-      habitData,
-      dayRuleData,
-      recurringData,
-    ];
-    const resolvedData = allData[currentCall] ?? [];
-
-    const mockLimit = vi.fn().mockResolvedValue(resolvedData);
-    const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
-    const mockWhere = vi.fn().mockImplementation(() => {
-      // users path (0) has limit; tasks path (1) has orderBy→limit; others resolve directly
-      if (currentCall === 0) return { limit: mockLimit };
-      if (currentCall === 1) return { orderBy: mockOrderBy };
-      return Promise.resolve(resolvedData);
-    });
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
-
-    return { from: mockFrom };
-  });
+  const select = vi.fn().mockImplementation(() => ({
+    from: (table: object) => makeChain(dataFor.get(table) ?? []),
+  }));
 
   return { select } as unknown as Parameters<typeof buildUserContext>[1];
 }
@@ -101,5 +101,23 @@ describe('buildUserContext', () => {
     const db = mockDb({ tasks: manyTasks.slice(0, 30) });
     const result = await buildUserContext('user-1', db);
     expect(result).toContain('Tasks (30):');
+  });
+
+  it('is unaffected by the order buildUserContext issues its five queries in', async () => {
+    // Regression guard for the old callCount-indexed mock: this test
+    // seeds every table's data distinctly and would fail if any table's
+    // rows leaked into another's formatted section, regardless of query
+    // order inside buildUserContext.
+    const db = mockDb({
+      tasks: [{ id: 't1', title: 'Task A', category: 'career', priority: 2, status: 'backlog', assignedDay: null, scheduledTime: null, durationMinutes: 30 }],
+      habits: [{ id: 'h1', name: 'Habit A', section: 'body', timeOfDay: 'morning', active: true }],
+      dayRules: [{ dayOfWeek: 1, focusArea: 'deep_work', maxFocusHours: 4 }],
+      recurring: [{ id: 'r1', title: 'Recurring A', category: 'career', daysOfWeek: [1, 3], scheduledTime: '09:00', durationMinutes: 45, active: true }],
+    });
+    const result = await buildUserContext('user-1', db);
+    expect(result).toContain('Task A');
+    expect(result).toContain('Habit A');
+    expect(result).toContain('deep_work');
+    expect(result).toContain('Recurring A');
   });
 });
