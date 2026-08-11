@@ -29,6 +29,9 @@ export function localToUTC(
     minute: '2-digit',
     second: '2-digit',
     hour12: false,
+    // hour12:false alone is ambiguous across ICU builds — some format
+    // midnight as "24" instead of "00". hourCycle pins it unambiguously.
+    hourCycle: 'h23',
   });
   const parts = formatter.formatToParts(naiveUtc);
   const get = (type: string) =>
@@ -64,6 +67,9 @@ export function utcToLocalParts(
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
+    // hour12:false alone is ambiguous across ICU builds — some format
+    // midnight as "24" instead of "00". hourCycle pins it unambiguously.
+    hourCycle: 'h23',
   });
   const parts = formatter.formatToParts(utcDate);
   const get = (type: string) =>
