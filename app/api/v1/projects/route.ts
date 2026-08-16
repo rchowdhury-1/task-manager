@@ -32,8 +32,8 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
   const parsed = createProjectSchema.safeParse(body);
   if (!parsed.success) return zodErrorResponse(parsed.error);
 
-  const { clientRate, ...rest } = parsed.data;
-  const slug = slugify(parsed.data.name);
+  const d = parsed.data;
+  const slug = slugify(d.name);
 
   try {
     const [row] = await db
@@ -41,9 +41,14 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       .values({
         userId,
         slug,
-        ...rest,
+        name: d.name,
+        type: d.type,
+        status: d.status,
+        clientName: d.client_name ?? null,
         // drizzle's numeric column type expects a string, not a JS number
-        clientRate: clientRate !== undefined ? String(clientRate) : undefined,
+        clientRate: d.client_rate !== undefined ? String(d.client_rate) : null,
+        clientCurrency: d.client_currency ?? null,
+        notes: d.notes ?? null,
       })
       .returning();
     return Response.json(row, { status: 201 });

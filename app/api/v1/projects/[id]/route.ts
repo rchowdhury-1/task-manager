@@ -30,15 +30,18 @@ export const PATCH = withAuth(async (req: NextRequest, { userId, params }) => {
   const parsed = updateProjectSchema.safeParse(body);
   if (!parsed.success) return zodErrorResponse(parsed.error);
 
-  const { name, clientRate, ...rest } = parsed.data;
-  const set: Record<string, unknown> = { ...rest, updatedAt: new Date() };
+  const d = parsed.data;
+  const set: Record<string, unknown> = { updatedAt: new Date() };
+
   // Renaming a project re-derives its slug, same as categories do.
-  if (name !== undefined) {
-    set.name = name;
-    set.slug = slugify(name);
-  }
+  if (d.name !== undefined)            { set.name = d.name; set.slug = slugify(d.name); }
+  if (d.type !== undefined)            set.type = d.type;
+  if (d.status !== undefined)          set.status = d.status;
+  if (d.client_name !== undefined)     set.clientName = d.client_name;
   // drizzle's numeric column type expects a string, not a JS number
-  if (clientRate !== undefined) set.clientRate = String(clientRate);
+  if (d.client_rate !== undefined)     set.clientRate = String(d.client_rate);
+  if (d.client_currency !== undefined) set.clientCurrency = d.client_currency;
+  if (d.notes !== undefined)           set.notes = d.notes;
 
   try {
     const [row] = await db

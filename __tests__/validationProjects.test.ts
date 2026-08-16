@@ -16,9 +16,9 @@ describe('createProjectSchema', () => {
     const parsed = createProjectSchema.safeParse({
       name: 'Glass Gardens',
       type: 'client',
-      clientName: 'Glass Gardens Aquatics',
-      clientRate: 45,
-      clientCurrency: 'GBP',
+      client_name: 'Glass Gardens Aquatics',
+      client_rate: 45,
+      client_currency: 'GBP',
     });
     expect(parsed.success).toBe(true);
   });
@@ -39,12 +39,12 @@ describe('createProjectSchema', () => {
   });
 
   it('rejects a currency code that is not 3 letters', () => {
-    const parsed = createProjectSchema.safeParse({ name: 'X', clientCurrency: 'GB' });
+    const parsed = createProjectSchema.safeParse({ name: 'X', client_currency: 'GB' });
     expect(parsed.success).toBe(false);
   });
 
   it('rejects a non-positive rate', () => {
-    const parsed = createProjectSchema.safeParse({ name: 'X', clientRate: 0 });
+    const parsed = createProjectSchema.safeParse({ name: 'X', client_rate: 0 });
     expect(parsed.success).toBe(false);
   });
 });
