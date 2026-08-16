@@ -15,11 +15,12 @@ import { NotificationOptInBanner } from '@/components/NotificationOptInBanner';
 import Providers from '../providers';
 
 const NAV_ITEMS = [
-  { label: 'Today',  href: '/today' },
-  { label: 'Week',   href: '/week' },
-  { label: 'Boards', href: '/boards' },
-  { label: 'Lists',  href: '/lists' },
-  { label: 'Stats',  href: '/stats' },
+  { label: 'Today',    href: '/today' },
+  { label: 'Week',     href: '/week' },
+  { label: 'Boards',   href: '/boards' },
+  { label: 'Lists',    href: '/lists' },
+  { label: 'Projects', href: '/projects' },
+  { label: 'Stats',    href: '/stats' },
 ] as const;
 
 // ─── Avatar Menu (Desktop) ─────────────────────────────────────────────────
@@ -130,6 +131,12 @@ function MobileAvatarSheet() {
                 className="w-full text-left px-3 py-2.5 text-sm text-primary hover:bg-surface-raised rounded-lg transition-colors"
               >
                 Boards
+              </button>
+              <button
+                onClick={() => { router.push('/projects'); setOpen(false); }}
+                className="w-full text-left px-3 py-2.5 text-sm text-primary hover:bg-surface-raised rounded-lg transition-colors"
+              >
+                Projects
               </button>
               <button
                 onClick={() => { router.push('/settings'); setOpen(false); }}

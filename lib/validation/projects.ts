@@ -13,5 +13,8 @@ export const createProjectSchema = z.object({
 
 export const updateProjectSchema = createProjectSchema.partial();
 
-export type CreateProjectInput = z.infer<typeof createProjectSchema>;
-export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+// z.input (not z.infer/z.output) — type/status have .default(), so callers
+// constructing a request body may correctly omit them; z.output would
+// require them in the TS type even though the schema accepts their absence.
+export type CreateProjectInput = z.input<typeof createProjectSchema>;
+export type UpdateProjectInput = z.input<typeof updateProjectSchema>;

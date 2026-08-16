@@ -3,7 +3,7 @@ import {
   useState, useEffect, useRef, useCallback, KeyboardEvent,
 } from 'react';
 import {
-  Search, Calendar, LayoutGrid, BarChart2, Settings, Sun, LogOut, Clock,
+  Search, Calendar, LayoutGrid, BarChart2, Settings, Sun, LogOut, Clock, Briefcase,
 } from 'lucide-react';
 import { QuickAddInput, ParsedTask } from './QuickAddInput';
 
@@ -92,6 +92,7 @@ export function CommandPalette({
     { id: 'today',    label: 'Go to Today',    icon: <Calendar size={16} />,   hint: 'T', action: () => { onNavigate('/today');    close(); }, section: 'Navigation', keywords: 'today' },
     { id: 'week',     label: 'Go to Week',     icon: <LayoutGrid size={16} />, hint: 'W', action: () => { onNavigate('/week');     close(); }, section: 'Navigation', keywords: 'week' },
     { id: 'boards',   label: 'Go to Boards',   icon: <LayoutGrid size={16} />, hint: 'B', action: () => { onNavigate('/boards');   close(); }, section: 'Navigation', keywords: 'boards kanban' },
+    { id: 'projects', label: 'Go to Projects', icon: <Briefcase size={16} />,  hint: 'P', action: () => { onNavigate('/projects'); close(); }, section: 'Navigation', keywords: 'projects clients crm' },
     { id: 'stats',    label: 'Go to Stats',    icon: <BarChart2 size={16} />,  hint: 'S', action: () => { onNavigate('/stats');    close(); }, section: 'Navigation', keywords: 'stats analytics' },
     { id: 'settings', label: 'Go to Settings', icon: <Settings size={16} />,   hint: ',', action: () => { onNavigate('/settings'); close(); }, section: 'Navigation', keywords: 'settings' },
   ];
