@@ -7,6 +7,7 @@ vi.mock('@/lib/db/schema', () => ({
   habits: { userId: 'userId' },
   dayRules: { userId: 'userId' },
   recurringTasks: { userId: 'userId' },
+  projects: { userId: 'userId' },
 }));
 
 vi.mock('@/lib/utils/timezone', () => ({
@@ -14,7 +15,7 @@ vi.mock('@/lib/utils/timezone', () => ({
 }));
 
 import { buildUserContext } from '@/lib/ai/context';
-import { users, tasks, habits, dayRules, recurringTasks } from '@/lib/db/schema';
+import { users, tasks, habits, dayRules, recurringTasks, projects } from '@/lib/db/schema';
 
 /**
  * A single permissive query-builder chain, thenable at every step so it
@@ -35,13 +36,14 @@ function makeChain<T>(rows: T[]) {
   return chain;
 }
 
-function mockDb(data: { tasks?: unknown[]; habits?: unknown[]; dayRules?: unknown[]; recurring?: unknown[] } = {}) {
+function mockDb(data: { tasks?: unknown[]; habits?: unknown[]; dayRules?: unknown[]; recurring?: unknown[]; projects?: unknown[] } = {}) {
   const dataFor = new Map<object, unknown[]>([
     [users, [{ timezone: 'Europe/London' }]],
     [tasks, data.tasks ?? []],
     [habits, data.habits ?? []],
     [dayRules, data.dayRules ?? []],
     [recurringTasks, data.recurring ?? []],
+    [projects, data.projects ?? []],
   ]);
 
   const select = vi.fn().mockImplementation(() => ({
@@ -59,6 +61,7 @@ describe('buildUserContext', () => {
     expect(result).toContain('- (none)');
     expect(result).toContain('Habits (0):');
     expect(result).toContain('Recurring tasks (0)');
+    expect(result).toContain('Projects (0');
   });
 
   it('includes today\'s date', async () => {
@@ -103,7 +106,7 @@ describe('buildUserContext', () => {
     expect(result).toContain('Tasks (30):');
   });
 
-  it('is unaffected by the order buildUserContext issues its five queries in', async () => {
+  it('is unaffected by the order buildUserContext issues its six queries in', async () => {
     // Regression guard for the old callCount-indexed mock: this test
     // seeds every table's data distinctly and would fail if any table's
     // rows leaked into another's formatted section, regardless of query
@@ -113,11 +116,27 @@ describe('buildUserContext', () => {
       habits: [{ id: 'h1', name: 'Habit A', section: 'body', timeOfDay: 'morning', active: true }],
       dayRules: [{ dayOfWeek: 1, focusArea: 'deep_work', maxFocusHours: 4 }],
       recurring: [{ id: 'r1', title: 'Recurring A', category: 'career', daysOfWeek: [1, 3], scheduledTime: '09:00', durationMinutes: 45, active: true }],
+      projects: [{ slug: 'glass-gardens', name: 'Glass Gardens', type: 'client', status: 'active', clientName: 'Glass Gardens Aquatics' }],
     });
     const result = await buildUserContext('user-1', db);
     expect(result).toContain('Task A');
     expect(result).toContain('Habit A');
     expect(result).toContain('deep_work');
     expect(result).toContain('Recurring A');
+    expect(result).toContain('Glass Gardens');
+    expect(result).toContain('Glass Gardens Aquatics');
+  });
+
+  it('formats projects with client info when present', async () => {
+    const db = mockDb({
+      projects: [
+        { slug: 'glass-gardens', name: 'Glass Gardens', type: 'client', status: 'active', clientName: 'Glass Gardens Aquatics' },
+        { slug: 'side-project', name: 'Side project', type: 'personal', status: 'paused', clientName: null },
+      ],
+    });
+    const result = await buildUserContext('user-1', db);
+    expect(result).toContain('Projects (2');
+    expect(result).toContain("glass-gardens: 'Glass Gardens' (client, active, client: Glass Gardens Aquatics)");
+    expect(result).toContain("side-project: 'Side project' (personal, paused)");
   });
 });

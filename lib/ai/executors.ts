@@ -12,6 +12,7 @@ import type { DB } from '@/lib/db';
 import { todayInTimezone } from '@/lib/utils/timezone';
 import { CATEGORY_SLUG_REGEX } from '@/lib/categories';
 import { getUserCategorySlugs } from '@/lib/categories-server';
+import { projectExecutors } from './projectExecutors';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export type ToolResult =
   | { ok: true; data: unknown }
   | { ok: false; error: string };
 
-type ExecutorFn = (
+export type ExecutorFn = (
   userId: string,
   args: Record<string, unknown>,
   db: DB,
@@ -313,7 +314,7 @@ async function deleteRecurring(userId: string, args: Record<string, unknown>, db
 
 // ─── Export map ─────────────────────────────────────────────────────────────
 
-export const EXECUTORS: Record<string, ExecutorFn> = {
+const taskAndHabitExecutors: Record<string, ExecutorFn> = {
   create_task: createTask,
   update_task: updateTask,
   delete_task: deleteTask,
@@ -324,4 +325,9 @@ export const EXECUTORS: Record<string, ExecutorFn> = {
   set_day_rule: setDayRule,
   create_recurring_task: createRecurring,
   delete_recurring: deleteRecurring,
+};
+
+export const EXECUTORS: Record<string, ExecutorFn> = {
+  ...taskAndHabitExecutors,
+  ...projectExecutors,
 };

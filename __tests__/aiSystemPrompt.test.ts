@@ -69,4 +69,25 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Never compute dates yourself');
     expect(prompt).toContain('always include the explicit ISO date');
   });
+
+  it('instructs the model to auto-create projects without asking for confirmation', () => {
+    // This is the whole point of log_project_update — a future prompt edit
+    // that silently drops this instruction would regress the feature back
+    // to asking for confirmation on every new project, defeating the
+    // single-prompt-capture design.
+    const prompt = buildSystemPrompt(new Date());
+    expect(prompt).toContain('log_project_update');
+    expect(prompt).toMatch(/auto-creates the project.*no existing project closely matches/);
+    expect(prompt).toContain('Do NOT ask the user to confirm');
+  });
+
+  it('instructs the model NOT to auto-create on update_project_status', () => {
+    const prompt = buildSystemPrompt(new Date());
+    expect(prompt).toMatch(/update_project_status.*does NOT auto-create/);
+  });
+
+  it('mentions list_projects for disambiguation', () => {
+    const prompt = buildSystemPrompt(new Date());
+    expect(prompt).toContain('list_projects');
+  });
 });

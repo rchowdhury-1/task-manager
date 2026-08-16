@@ -215,5 +215,70 @@ export function buildTools(categorySlugs: string[]): ChatCompletionTool[] {
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'create_project',
+      description: "Create a new project (client work or personal). Prefer log_project_update for capturing progress on something that might already exist — it resolves the project by name automatically. Use create_project when you want to set up client details (name/rate/currency) explicitly.",
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Project name' },
+          type: { type: 'string', enum: ['client', 'personal'] },
+          status: { type: 'string', enum: ['active', 'paused', 'done', 'archived'] },
+          client_name: { type: 'string', description: 'Client/company name, for client-type projects' },
+          client_rate: { type: 'number', description: 'Hourly or agreed rate' },
+          client_currency: { type: 'string', description: 'ISO 4217 currency code, e.g. GBP' },
+          notes: { type: 'string', description: "A short static description of what this project is (not a progress log entry — use log_project_update for that)" },
+        },
+        required: ['name'],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'log_project_update',
+      description: "Log a progress update against a project — the primary way to capture what happened on a piece of work. Identify the project by name or slug; if no close match exists, a new personal project is created automatically with that name, so don't ask for confirmation first.",
+      parameters: {
+        type: 'object',
+        properties: {
+          project: { type: 'string', description: 'Project name or slug, e.g. "Glass Gardens" or "glass-gardens"' },
+          update: { type: 'string', description: 'What happened — free text, e.g. "Shipped the auth flow, waiting on DNS"' },
+        },
+        required: ['project', 'update'],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'update_project_status',
+      description: 'Change a project\'s status (e.g. mark it paused, done, or archived). The project must already exist — use list_projects or create_project first if unsure.',
+      parameters: {
+        type: 'object',
+        properties: {
+          project: { type: 'string', description: 'Project name or slug' },
+          status: { type: 'string', enum: ['active', 'paused', 'done', 'archived'] },
+        },
+        required: ['project', 'status'],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'list_projects',
+      description: "List the user's projects with their current status. Use this to answer questions like \"what projects do I have\" or to resolve an ambiguous project reference.",
+      parameters: {
+        type: 'object',
+        properties: {},
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 }

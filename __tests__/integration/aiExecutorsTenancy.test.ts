@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { EXECUTORS } from '@/lib/ai/executors';
-import { tasks, habits, categories } from '@/lib/db/schema';
+import { tasks, habits, categories, projects, projectUpdates } from '@/lib/db/schema';
 import { getTestDb, closeTestDb, truncateAll, createUser } from './helpers/harness';
 
 /**
@@ -147,5 +147,85 @@ describe('AI executor tenancy — real Postgres, two real users', () => {
     );
 
     expect(result.ok).toBe(false);
+  });
+
+  // ─── Projects (v1 feature) ──────────────────────────────────────────────
+
+  it('log_project_update: cross-user resolution never leaks — user B logging against user A\'s project name auto-creates B\'s OWN project, not a row on A\'s', async () => {
+    const userA = await createUser(db);
+    const userB = await createUser(db);
+    await db.insert(projects).values({ userId: userA.userId, slug: 'glass-gardens', name: 'Glass Gardens', type: 'client', status: 'active' });
+
+    const result = await EXECUTORS.log_project_update(
+      userB.userId,
+      { project: 'Glass Gardens', update: 'B trying to log against A\'s project name' },
+      db
+    );
+    expect(result.ok).toBe(true);
+
+    // Two distinct 'Glass Gardens' projects now exist — one per user, never shared.
+    const allNamed = await db.select().from(projects).where(eq(projects.name, 'Glass Gardens'));
+    expect(allNamed).toHaveLength(2);
+    const bsProject = allNamed.find((p) => p.userId === userB.userId)!;
+    const asProject = allNamed.find((p) => p.userId === userA.userId)!;
+    expect(bsProject.id).not.toBe(asProject.id);
+
+    // The update landed on B's own project, not A's.
+    const updatesOnA = await db.select().from(projectUpdates).where(eq(projectUpdates.projectId, asProject.id));
+    expect(updatesOnA).toHaveLength(0);
+    const updatesOnB = await db.select().from(projectUpdates).where(eq(projectUpdates.projectId, bsProject.id));
+    expect(updatesOnB).toHaveLength(1);
+  });
+
+  it('update_project_status: user B cannot change the status of user A\'s project via its real slug/name', async () => {
+    const userA = await createUser(db);
+    const userB = await createUser(db);
+    const [projectA] = await db
+      .insert(projects)
+      .values({ userId: userA.userId, slug: 'glass-gardens', name: 'Glass Gardens', type: 'client', status: 'active' })
+      .returning();
+
+    const result = await EXECUTORS.update_project_status(
+      userB.userId,
+      { project: 'glass-gardens', status: 'archived' },
+      db
+    );
+
+    // B has no project with that slug — resolveExistingProject correctly
+    // reports "no match" rather than somehow reaching into A's row.
+    expect(result.ok).toBe(false);
+
+    const [stillActive] = await db.select().from(projects).where(eq(projects.id, projectA.id));
+    expect(stillActive.status).toBe('active');
+  });
+
+  it('update_project_status: the owning user CAN change their own project\'s status (positive control), scoped by userId in the real query', async () => {
+    const userA = await createUser(db);
+    await db.insert(projects).values({ userId: userA.userId, slug: 'glass-gardens', name: 'Glass Gardens', type: 'client', status: 'active' });
+
+    const result = await EXECUTORS.update_project_status(
+      userA.userId,
+      { project: 'glass-gardens', status: 'paused' },
+      db
+    );
+
+    expect(result.ok).toBe(true);
+    const [updated] = await db.select().from(projects).where(and(eq(projects.userId, userA.userId), eq(projects.slug, 'glass-gardens')));
+    expect(updated.status).toBe('paused');
+  });
+
+  it('list_projects: only returns the calling user\'s own projects, never another user\'s', async () => {
+    const userA = await createUser(db);
+    const userB = await createUser(db);
+    await db.insert(projects).values({ userId: userA.userId, slug: 'a-project', name: 'A Project', type: 'personal', status: 'active' });
+    await db.insert(projects).values({ userId: userB.userId, slug: 'b-project', name: 'B Project', type: 'personal', status: 'active' });
+
+    const result = await EXECUTORS.list_projects(userA.userId, {}, db);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('unreachable');
+    const slugs = (result.data as { slug: string }[]).map((p) => p.slug);
+    expect(slugs).toEqual(['a-project']);
+    expect(slugs).not.toContain('b-project');
   });
 });

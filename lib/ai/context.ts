@@ -1,13 +1,14 @@
 import { eq, desc } from 'drizzle-orm';
-import { tasks, users, habits, dayRules, recurringTasks } from '@/lib/db/schema';
+import { tasks, users, habits, dayRules, recurringTasks, projects } from '@/lib/db/schema';
 import type { DB } from '@/lib/db';
 import { todayInTimezone } from '@/lib/utils/timezone';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MAX_TASKS = 30;
+const MAX_PROJECTS = 15;
 
 export async function buildUserContext(userId: string, db: DB): Promise<string> {
-  const [userRows, userTasks, userHabits, userDayRules, userRecurring] = await Promise.all([
+  const [userRows, userTasks, userHabits, userDayRules, userRecurring, userProjects] = await Promise.all([
     db.select({ timezone: users.timezone })
       .from(users)
       .where(eq(users.id, userId))
@@ -26,6 +27,11 @@ export async function buildUserContext(userId: string, db: DB): Promise<string> 
     db.select()
       .from(recurringTasks)
       .where(eq(recurringTasks.userId, userId)),
+    db.select()
+      .from(projects)
+      .where(eq(projects.userId, userId))
+      .orderBy(desc(projects.updatedAt))
+      .limit(MAX_PROJECTS),
   ]);
 
   const userTz = userRows[0]?.timezone ?? 'UTC';
@@ -82,6 +88,17 @@ export async function buildUserContext(userId: string, db: DB): Promise<string> 
       const time = r.scheduledTime ? ` ${r.scheduledTime}` : '';
       const active = r.active ? '' : ' [inactive]';
       lines.push(`- ${r.id}: '${r.title}' (${r.category}, ${days}${time}, ${r.durationMinutes}m) [RECURRING]${active}`);
+    }
+  }
+
+  // Projects (client work + personal projects, most recently updated first)
+  lines.push(`\nProjects (${userProjects.length}, most recently updated first) — use log_project_update to add progress, update_project_status to change status:`);
+  if (userProjects.length === 0) {
+    lines.push('- (none)');
+  } else {
+    for (const p of userProjects) {
+      const client = p.clientName ? `, client: ${p.clientName}` : '';
+      lines.push(`- ${p.slug}: '${p.name}' (${p.type}, ${p.status}${client})`);
     }
   }
 
