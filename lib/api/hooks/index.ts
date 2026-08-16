@@ -7,3 +7,4 @@ export * from './useToday';
 export * from './useAI';
 export * from './useStats';
 export * from './useCategories';
+export * from './useProjects';

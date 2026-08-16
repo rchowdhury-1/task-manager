@@ -9,4 +9,7 @@ export const queryKeys = {
   recurring: () => ['recurring'] as const,
   today: (date: string) => ['today', date] as const,
   categories: () => ['categories'] as const,
+  projects: () => ['projects'] as const,
+  project: (id: string) => ['projects', id] as const,
+  projectUpdates: (id: string) => ['projects', id, 'updates'] as const,
 };
