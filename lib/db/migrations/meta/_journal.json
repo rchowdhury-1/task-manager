@@ -43,6 +43,13 @@
       "when": 1783096298003,
       "tag": "0005_unlock_system_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786898224847,
+      "tag": "0006_add_projects",
+      "breakpoints": true
     }
   ]
 }

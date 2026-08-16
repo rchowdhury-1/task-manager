@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useCategories, useCreateCategory } from '@/lib/api/hooks';
 import { SMART_LISTS, type SmartListKey } from '@/lib/lists/smartLists';
+import { slugify } from '@/lib/utils/slugify';
 import type { Task, CategoryRecord } from '@/lib/types';
 
 const TONE_DOT: Record<string, string> = {
@@ -84,7 +85,7 @@ export function MobileTopicStrip({
               onClick={() => {
                 const name = prompt('Topic name:');
                 if (!name) return;
-                const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                const slug = slugify(name);
                 createCategory.mutate({ slug, label: name, colour: 'blue' });
               }}
               className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-dashed border-border-strong text-[13px] text-tertiary whitespace-nowrap"

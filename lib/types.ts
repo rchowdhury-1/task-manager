@@ -1,3 +1,5 @@
+import type { PROJECT_TYPES, PROJECT_STATUSES } from './projects';
+
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
 // Task categories ("topics") are per-user DB rows referenced by slug — any
@@ -7,6 +9,8 @@ export type Priority = 1 | 2 | 3;
 export type Status = 'backlog' | 'this_week' | 'in_progress' | 'done';
 export type DayFocus = 'job_hunt' | 'lms' | 'freelance' | 'learning' | 'rest' | 'flex';
 export type Section = 'faith' | 'body' | 'growth';
+export type ProjectType = (typeof PROJECT_TYPES)[number];
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 // ─── Category record (DB-backed, used from Phase 4+) ────────────────────────
 
@@ -97,4 +101,27 @@ export interface TodayPayload {
   recurring: RecurringTask[];
   habits: Habit[];
   completions: HabitCompletion[];
+}
+
+export interface Project {
+  id: string;
+  userId: string;
+  slug: string;
+  name: string;
+  type: ProjectType;
+  status: ProjectStatus;
+  clientName: string | null;
+  clientRate: string | null; // numeric columns come back as strings from pg
+  clientCurrency: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectUpdate {
+  id: string;
+  projectId: string;
+  userId: string;
+  body: string;
+  createdAt: string;
 }

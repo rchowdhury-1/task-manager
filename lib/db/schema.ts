@@ -216,3 +216,49 @@ export const pushSubscriptions = pgTable(
     endpointUnique: unique("push_subscriptions_endpoint_unique").on(t.endpoint),
   })
 );
+
+// ─── projects ────────────────────────────────────────────────────────────────
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    type: text("type").notNull().default("personal"),
+    status: text("status").notNull().default("active"),
+    clientName: text("client_name"),
+    clientRate: numeric("client_rate"),
+    clientCurrency: text("client_currency"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).default(sql`now()`),
+  },
+  (t) => ({
+    userSlugUnique: unique("projects_user_slug_unique").on(t.userId, t.slug),
+    userStatusIdx: index("projects_user_status_idx").on(t.userId, t.status),
+  })
+);
+
+// ─── project_updates ─────────────────────────────────────────────────────────
+
+export const projectUpdates = pgTable(
+  "project_updates",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`),
+  },
+  (t) => ({
+    projectCreatedIdx: index("project_updates_project_created_idx").on(t.projectId, t.createdAt),
+  })
+);

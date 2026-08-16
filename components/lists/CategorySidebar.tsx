@@ -4,6 +4,7 @@ import { Plus, List, Zap, Calendar, Clock, MoreHorizontal, Trash2 } from 'lucide
 import { useCategories, useCreateCategory, useDeleteCategory } from '@/lib/api/hooks';
 import { SMART_LISTS, type SmartListKey } from '@/lib/lists/smartLists';
 import { CATEGORY_ICON_EMOJI, DEFAULT_CATEGORY_ICON } from '@/lib/categories';
+import { slugify } from '@/lib/utils/slugify';
 import type { Task, CategoryRecord } from '@/lib/types';
 
 const SMART_LIST_ICONS: Record<SmartListKey, typeof List> = {
@@ -54,7 +55,7 @@ export function CategorySidebar({
   const handleCreate = () => {
     const label = newLabel.trim();
     if (!label) return;
-    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const slug = slugify(label);
     createCategory.mutate(
       { slug, label, colour: newColour },
       { onSuccess: () => { setNewLabel(''); setShowNewForm(false); } },
